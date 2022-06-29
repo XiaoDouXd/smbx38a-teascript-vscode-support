@@ -1,0 +1,35 @@
+{
+    "name": "teascript-for-smbx38a",
+    "displayName": "Teascript For SMBX38A",
+    "description": "Teascript of SMBX38A coding support.",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.68.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "main": "./client/src/extension.ts",
+    "activationEvents": [
+        "onLanguage:smbxtea"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "smbxtea",
+            "aliases": ["SMBX Teascript", "smbxtea"],
+            "extensions": [".smt"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "smbxtea",
+            "scopeName": "source.smt",
+            "path": "./syntaxes/smbxtea.tmLanguage.json"
+        }],
+        "snippets": [
+            {
+                "language": "shaderlab",
+                "path": "./snippets/smbxtea.json"
+            }
+        ]
+    }
+}
