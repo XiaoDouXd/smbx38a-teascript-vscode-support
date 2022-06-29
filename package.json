@@ -9,10 +9,6 @@
     "categories": [
         "Programming Languages"
     ],
-    "main": "./client/src/extension.ts",
-    "activationEvents": [
-        "onLanguage:smbxtea"
-    ],
     "contributes": {
         "languages": [{
             "id": "smbxtea",

@@ -9,13 +9,10 @@
 			"include": "#comment"
 		},
 		{
+			"include": "#declare"
+		},
+		{
 			"include": "#keywords"
-		},
-		{
-			"include": "#strings"
-		},
-		{
-			"include": "#entity"
 		},
 		{
 			"include": "#expression"
@@ -28,10 +25,13 @@
 			"patterns": [{
 				"name": "keyword.control.smbxtea",
 				"match": "\\b(As|Call|Case|Dim|Else|ElseIf|End|Export|For|GoTo|GoSub|If|next|Return|Script|Select|Step|Then|To|While|With)\\b"
+			},
+			{
+				"include": "#support"
 			}]
 		},
-		"entity" : {
-			"name":"entity.name.tag",
+		"support" : {
+			"name":"support.name.buildin_v",
 			"patterns": [{
 				"name": "keyword.control.smbxtea",
 				"match": "\\b(Array|GVal|ReDim|v|Val)\\b"
@@ -90,8 +90,12 @@
 			}]
 		},
 		"expression":{
-			"patterns": [{
+			"patterns": [
+			{
 				"include": "#numeric"
+			},
+			{
+				"include": "#strings"
 			},
 			{
 				"include": "#call_function"
@@ -104,42 +108,82 @@
 			}]
 		},
 
+
 		"declare":{
 			"patterns": [
 				{
-					"include": "#declare_function"
+					"include": "#declare_variable"
 				},
 				{
-					"include": "#declare_variable"
+					"include": "#declare_function"
 				}
 			]
 		},
 		"declare_variable":{
 			"name": "meta.var.declare",
-			"match": "(?:\\bDim\\s+)([_a-zA-Z][_a-zA-Z0-9]*)(?:\\s+As\\s+)([_a-zA-Z][_a-zA-Z0-9]*\\b)(.*)",
+			"match": "(\\bDim\\s+)([_a-zA-Z][_a-zA-Z0-9]*)(\\s+As\\s+)([_a-zA-Z][_a-zA-Z0-9]*\\b)(.*)",
 			"captures": {
 				"1":{
-					"name":"comment.line",
+					"name":"keyword.control.define"
+				},
+				"2":{
 					"patterns": [{
 						"include": "#identifier"
 					}]},
-				"2":{
+				"3":{
+					"name":"keyword.control.define"
+				},
+				"4":{
 					"patterns":[{
 						"include": "#type"
 					}]},
-				"3":{
+				"5":{
 					"patterns": [{
 						"include": "#expression"
 					}]}
 				}
+		},
+		"declare_function":{
+			"name" : "meta.function.block",
+			"begin": "((?:\\bExport\\s+)?(?:\\bScript\\s+))([_a-zA-Z][_a-zA-Z0-9]*)(\\([\\s\\S]*\\))",
+			"end": "(\\bEnd\\s+Script\\b)",
+			"beginCaptures": {
+				"0":{
+					"name": "declare.function.begin"
+				},
+				"1":{
+					"name": "keyword.control.function"
+				},
+				"2":{
+					"name": "entity.name.function.smbxtea",
+					"patterns": [{
+					"include": "#identifier"
+				}]},
+				"3":{
+					"patterns": [{
+						"include": "#declare_param"
+				}]}
+			},
+			"endCaptures": {
+				"0":{
+					"name":"declare.function.end"
+				},
+				"1":{
+					"name":"keyword.control.function"
+				}
+			},
+			"patterns": [{
+				"include": "#block"
+			}]
 		},
 		"declare_param" : {
 			"patterns": [{
 				"name": "meta.function.parameters",
 				"begin": "\\(",
 				"end": "\\)",
-				"patterns": [{
-						"include": "#keywords"
+				"patterns": [
+					{
+						"include": "#declare_params_return"
 					},
 					{
 						"include": "#declare_params_variable"
@@ -147,54 +191,47 @@
 				]
 			}]
 		},
-		"declare_function":{
-			"patterns": [
-				{
-					"name" : "meta.function.smbxtea",
-					"begin": "(?:\\bExport\\s+)?(?:\\bScript\\s+)([_a-zA-Z][_a-zA-Z0-9]*)(\\([\\s\\S]*\\))",
-					"end": "$",
-					"captures": {
-						"1":{
-							"name": "entity.name.function.smbxtea",
-							"patterns": [{
-							"include": "#identifier"
-						}]},
-						"2":{
-							"patterns": [{
-								"include": "#declare_params_variable"
-						}]}
-					},
-					"patterns": [{
-						"include": "#block_function"
-					},
-					{
-						"include": "#comment"
-					}]
-				}
-			]
-		},
 		"declare_params_variable":{
 			"name": "meta.var.declare",
-			"match": "(\\b[_a-zA-Z][_a-zA-Z0-9]*\\b)(?:\\bAs\\b)(\\b[_a-zA-Z][_a-zA-Z0-9]*\\b)(.*)",
-			"captures": {
-				"1":{
-					"patterns": [{
-						"include": "#identifier"
-					}]},
-				"2":{
-					"patterns":[{
-						"include": "#type"
-					}]},
-				"3":{
-					"patterns": [{
-						"include": "#expression"
-					}]}
-				}
+			"begin": "([_a-zA-Z][_a-zA-Z0-9]*)(\\s+As\\s+)([_a-zA-Z][_a-zA-Z0-9]*)([^,]*)",
+			"end": "\\s*(\\,)",
+			"beginCaptures": {
+			"1":{
+				"patterns": [{
+					"include": "#identifier"
+				}]},
+			"2":{
+				"name" : "keyword.control.type_reflesh"
+			},
+			"3":{
+				"patterns":[{
+					"include": "#type"
+				}]},
+			"4":{
+				"patterns": [{
+					"include": "#expression"
+				}]}
+			}
 		},
+		"declare_params_return":{
+			"name": "meta.return-type",
+			"begin": "\\b(Return)\\s+([_a-zA-Z][_a-zA-Z0-9]*)",
+			"end": "\\)",
+			"beginCaptures": {
+				"1":{
+					"name":"keyword.control.function_return"
+				},
+				"2":{
+					"patterns": [{
+						"include": "#type"
+				}]}
+			}
+		},
+
 
 		"call_function":{
 			"patterns": [{
-				"match": "([_a-zA-Z][_a-zA-Z0-9]*)(\\((([^/]|/(?!\\*))*)((/\\*.*?\\*/)(([^/]|/(?![*/]))*))*\\))(\\b'.*)",
+				"match": "([_a-zA-Z][_a-zA-Z0-9]*(?<!Array|GVal|ReDim|v|Val))(\\((([^/]|/(?!\\*))*)((/\\*.*?\\*/)(([^/]|/(?![*/]))*))*\\))(\\b'.*)",
 				"captures": {
 					"1": {
 						"name": "entity.name.function.smbxtea",
@@ -226,6 +263,7 @@
 			}]
 		},
 
+
 		"block":{
 			"name": "meta.block.smbxtea",
 			"patterns": [{
@@ -235,23 +273,11 @@
 				"include": "#declare_variable"
 			},
 			{
-				"include": "#block"
-			},
-			{
 				"include": "#keywords"
 			},
 			{
-				"include": "#expr"
+				"include": "#exprssion"
 			}]
-		},
-		"block_function":{
-			"name": "meta.block.function.smbxtea",
-			"begin":"(\\bExport\\s+)?(\\bScript\\s+)([_a-zA-Z][_a-zA-Z0-9]*)(\\([\\s\\S]*\\))",
-			"end":"\\bEnd\\s+Script\\b",
-			"patterns": [{
-				"include": "#block"
-			}
-		]
 		}
 	}
 }
