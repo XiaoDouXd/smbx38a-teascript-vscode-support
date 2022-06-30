@@ -12,12 +12,12 @@ type ScopeMatchedCallback = (scopeMatch: ScopeMatchResult) => void;
 type DocumentDiagnoseCallback = (unMatched: UnMatchedText) => Diagnostic[];
 type PatternItemDictionary = { [key: string]: (pattern: GrammarPattern) => PatternItem };
 
-/** 匹配模式基类: 是所有词汇捕获模式的基类 */
+/** 匹配模板基类: 是所有词汇捕获模板的基类 */
 abstract class PatternItem
 {
-    /** 模式名称 */
+    /** 模板名称 */
     name = "pattern";
-    /** 父模式 */
+    /** 父模板 */
     parent?: OrderedPatternSet;
     /** 严格匹配 */
     strict = false;
@@ -25,7 +25,7 @@ abstract class PatternItem
     ignorable = false;
     /** 多结果 */
     multi = false;
-    /** 匹配语法 */
+    /** 语法模板 */
     pattern: GrammarPattern;
 
     /**
@@ -36,7 +36,7 @@ abstract class PatternItem
      */
     abstract match(doc: TextDocument, startOffset: number): MatchResult;
     /**
-     * @param pattern 语法
+     * @param pattern 语法模板
      * @param ignorable 是否可忽略
      */
     constructor(pattern: GrammarPattern, ignorable = false)
@@ -49,7 +49,7 @@ abstract class PatternItem
         return this.ignorable ? `[${this.name}]` : `<${this.name}>`;
     }
 }
-/** 空模式: 用于一个段落内的所有捕获空字符 */
+/** 空模板: 用于一个段落内的所有捕获空字符 */
 class EmptyPattern extends PatternItem
 {
     name = "space";
@@ -121,7 +121,7 @@ class EmptyPattern extends PatternItem
         return match;
     }
 }
-/** 正则表达式模式 */
+/** 正则表达式模板: 未定义正则表达式, 需要在构造时指出 */
 class RegExpPattern extends PatternItem
 {
     name = "regExp";
@@ -129,9 +129,7 @@ class RegExpPattern extends PatternItem
     regExp: RegExp;
 
     /**
-     * @param pattern 匹配语法
      * @param reg 正则表达式
-     * @param ignorable 可忽略的
      */
     constructor(pattern: GrammarPattern, reg: RegExp, ignorable = false)
     {
@@ -146,7 +144,10 @@ class RegExpPattern extends PatternItem
             // 跳过空字符
             startOffset += skip[0].length;
         
+        // 截取后面的字符
         const text = doc.getText().substring(startOffset);
+
+        // 通过该模板默认的正则表达式匹配
         const regMatch = this.regExp.exec(text);
         const match = new MatchResult(doc, this);
         match.startOffset = startOffset;
@@ -163,9 +164,15 @@ class RegExpPattern extends PatternItem
         return match;
     }
 }
+/** 未命名模板: 可以以其它一些模板为原型复制出一些新模板 */
 class NamedPattern extends PatternItem
 {
     patternItem: PatternItem;
+
+    /**
+     * @param name 名称
+     * @param patternItem 要复制的模板
+     */
     constructor(pattern: GrammarPattern, name: string, patternItem: PatternItem)
     {
         super(pattern, patternItem.ignorable);
@@ -180,18 +187,25 @@ class NamedPattern extends PatternItem
         return match;
     }
 }
+/** 文本模板: 将连续文本根据其中的+-*\/.()...等符号进行划分并匹配 */
 class TextPattern extends RegExpPattern
 {
     text: string;
     currentIdx = 0;
     get ignoreCase() { return this.regExp.ignoreCase; }
+    /**
+     * @param text 文本
+     * @param ignoreCase 是否忽略大小写
+     */
     constructor(pattern: GrammarPattern, text: string, ignorable = false, ignoreCase = false)
     {
+        // 将文本分割开, 用\$&替换掉特殊符号
         super(pattern, new RegExp(text.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&'), ignoreCase ? "i" : ""), ignorable);
         this.text = text;
         this.name = text;
     }
 }
+/** 字符串模板: 匹配所有被两个双引号夹住形式的字符串 */
 class StringPattern extends RegExpPattern
 {
     name = "string";
@@ -200,17 +214,21 @@ class StringPattern extends RegExpPattern
     end = false;
     constructor(pattern: GrammarPattern, ignorable = false)
     {
+        // 匹配两个双引号夹起来的形状
         super(pattern, /"([^\\"]|\\\S|\\")*"/, ignorable);
     }
 }
+/** 数字模板: 匹配所有数字 */
 class NumberPattern extends RegExpPattern
 {
     name = "number";
     constructor(pattern: GrammarPattern, ignorable = false)
     {
+        // 匹配所有数字
         super(pattern, /[+-]?[0-9]+\.?[0-9]*/, ignorable);
     }
 }
+/** 命名模板: 匹配所有的变量、函数、结构体等名称 */
 class IdentifierPattern extends RegExpPattern
 {
     name = "identifier";
@@ -220,52 +238,75 @@ class IdentifierPattern extends RegExpPattern
     }
 }
 
-
+/** 依序模板组: 若中间有些模板无法匹配则后面的内容就都不匹配了 */
 class OrderedPatternSet extends PatternItem
 {
     name = "nest";
+    /** 子模板集 */
     subPatterns: PatternItem[] = [];
+    /** 当前节点的id */
     currentIdx = 0;
+    /** 子模板的个数 */
     get count() { return this.subPatterns.length; }
+
+    /**
+     * 添加子模板
+     * @param patternItem 待添加的子模板
+     */
     addSubPattern(patternItem: PatternItem)
     {
         this.subPatterns.push(patternItem);
     }
-    toString()
-    {
-        const str = super.toString() + "\r\n" + this.subPatterns.map(pattern => pattern.toString()).join("\r\n").split(/\r\n/g).map(str => "\t" + str).join("\r\n");
-        return str;
-    }
+    /**
+     * 依序模板组的匹配
+     * 划定作用域的准备工作
+     */
     match(doc: TextDocument, startOffset: number): MatchResult
     {
+        // 创建匹配结果的容器
         const match = new MatchResult(doc, this);
         match.startOffset = startOffset;
+
         try 
         {
+            // 遍历每一个子模板
             for (let i = 0; i < this.subPatterns.length; i++)
             {
+                // 尝试匹配
                 const subMatch = this.subPatterns[i].match(doc, startOffset);
                 if (!subMatch.matched)
                 {
+                    // 其实这段就是在说:
+                    // 若本段落有子段落并且现在已经离开了该子段落
+                    // 则标记该子段落的结尾
+                    // 如果为严格匹配且当前的匹配结果(可能是与兄弟模板匹配的结果)不为空
                     if (this.strict && !EmptyPattern.isEmpty(subMatch.text))
                     {
+                        // 为匹配结果加上新的子段落
                         match.addChildren(subMatch);
                         match.endOffset = subMatch.endOffset;
                         match.matched = false;
                         return match;
                     }
+                    // 如果该段可忽略
                     if (this.subPatterns[i].ignorable)
                         continue;
+                    
+                    //
                     match.addChildren(subMatch);
                     match.endOffset = subMatch.endOffset;
                     match.matched = false;
                     return match;
                 }
+
+                // 若匹配上了部分关键字, 则后移开始指针
                 match.addChildren(subMatch);
                 startOffset = subMatch.endOffset;
                 if (this.subPatterns[i].multi)
                     i--;
             }
+
+            // 若子段落为没有
             if (match.children.length === 0)
             {
                 match.endOffset = match.startOffset + 1;
@@ -284,11 +325,20 @@ class OrderedPatternSet extends PatternItem
         }
         return match;
     }
+    toString()
+    {
+        const str = super.toString() + "\r\n" + this.subPatterns.map(pattern => pattern.toString()).join("\r\n").split(/\r\n/g).map(str => "\t" + str).join("\r\n");
+        return str;
+    }
 }
+/** 选择模板树: 跳过无法匹配的模板继续往后面匹配 */
 class OptionalPatternSet extends OrderedPatternSet
 {
     name = "optional";
 
+    /**
+     * 选择模板树的匹配
+     */
     match(doc: TextDocument, startOffset: number): MatchResult
     {
         const match = new PatternMatchResult(doc, this);
@@ -323,11 +373,17 @@ class OptionalPatternSet extends OrderedPatternSet
         return match;
     }
 }
+/** 域模板: 用来做域的划分 */
 class ScopePattern extends OrderedPatternSet
 {
     name = "scope";
+    /** 域 */
     scope: GrammarScope;
 
+
+    /**
+     * @param scope 域
+     */
     constructor(pattern: GrammarPattern, scope: GrammarScope)
     {
         super(pattern, false);
@@ -434,6 +490,7 @@ class ScopePattern extends OrderedPatternSet
         return match;
     }
 }
+/** 语法模板: 全局意义上的语法分析类 其 match() 方法给出语法分析结果 */
 class Grammar extends ScopePattern
 {
     name = "grammar";
@@ -504,14 +561,14 @@ class Grammar extends ScopePattern
     }
 }
 
-/** 匹配结果基类: 用于保存各种模式匹配的结果 */
+/** 匹配结果基类: 用于保存各种模板匹配的结果 */
 class MatchResult
 {
-    /** 基准文本段落 */
+    /** 未匹配的原始文本段落 */
     document: TextDocument;
-    /** 对应的匹配模式 */
+    /** 对应的匹配模板 */
     patternItem: PatternItem;
-    /** 模式名称 */
+    /** 模板名称 */
     patternName: string = null;
     /** 开始文本偏移量 */
     startOffset: number;
@@ -531,12 +588,12 @@ class MatchResult
 
     /** 匹配域 */
     matchedScope: ScopeMatchResult;
-    /** 匹配模式 */
+    /** 匹配模板 */
     matchedPattern: PatternMatchResult;
-    /** 不匹配模式 */
+    /** 不匹配模板 */
     unmatchedPattern: UnMatchedPattern;
 
-    /** 对应的语法模式 */
+    /** 对应的语法模板 */
     private _pattern: GrammarPattern = null;
 
     /** 开始位置(相对于基准段落) */
@@ -545,16 +602,16 @@ class MatchResult
     get end() { return this.document.positionAt(this.endOffset); }
     /** 文本长度 */
     get length() { return this.endOffset - this.startOffset; }
-    /** 文本内容 */
+    /** 匹配结果中的文本内容 */
     get text() { return this.document.getText({ start: this.start, end: this.end }); }
-    /** 模式 */
+    /** 模板 */
     get pattern() { return this._pattern ? this._pattern : this.patternItem.pattern; }
-    /** 设置模式 @param value 要设置的模式 */
+    /** 设置模板 @param value 要设置的模板 */
     set pattern(value) { this._pattern = value; }
 
     /**
      * @param doc 基准文本段落
-     * @param patternItem 匹配所用的模式
+     * @param patternItem 匹配所用的模板
      */
     constructor(doc: TextDocument, patternItem: PatternItem)
     {
@@ -601,7 +658,7 @@ class MatchResult
         return child.locateMatchAtPosition(pos);
     }
 }
-/** 模式匹配结果 */
+/** 模板匹配结果 */
 class PatternMatchResult extends MatchResult
 {
     private _matchesList: MatchResult[] = null;
@@ -660,6 +717,7 @@ class PatternMatchResult extends MatchResult
         });
     }
 }
+/** 域匹配结果 */
 class ScopeMatchResult extends MatchResult
 {
     beginMatch: MatchResult;
@@ -703,6 +761,7 @@ class ScopeMatchResult extends MatchResult
         }
     }
 }
+/** 语法匹配结果 */
 class GrammarMatchResult extends ScopeMatchResult
 {
     grammar: LanguageGrammar;
@@ -764,6 +823,7 @@ class GrammarMatchResult extends ScopeMatchResult
         return completions;
     }
 }
+/** 未匹配文本 */
 class UnMatchedText extends MatchResult
 {
     allMatches: MatchResult[];
@@ -857,11 +917,12 @@ class UnMatchedText extends MatchResult
         this.allMatches.push(match);
     }
 }
+/** 未匹配模板 */
 class UnMatchedPattern extends UnMatchedText
 {
     constructor(doc: TextDocument, patternItem: PatternItem, matches: MatchResult[])
     {
-        super(doc, patternItem.pattern._scope, matches);
+        super(doc, patternItem.pattern.scope, matches);
         this.patternItem = patternItem;
     }
     processSubMatches()
@@ -890,66 +951,122 @@ class UnMatchedPattern extends UnMatchedText
         return linq.from(this.allSubMatches).where(match => match.patternName === name).toArray();
     }
 }
+/** 模板声明 */
 class PatternDictionary
 {
     [key: string]: GrammarPattern;
 }
+/** 域声明 */
 class ScopeDictionary
 {
     [key: string]: GrammarScope;
 }
+/** 域语法声明 */
 class GrammarScope
 {
+    /** 开始模板 */
     begin: string;
+    /** 结束模板 */
     end: string;
+    /** 是否跨行 */
     skipMode?: "line" | "space";
+    /** 域内内容分解模板 */
     patterns?: GrammarPattern[];
+    /** 嵌套域 */
     scopes?: GrammarScope[];
+    /** 名称 */
     name?: string;
+    /** 排除的语法模板 */
     ignore?: GrammarPattern;
+    /** 符号对匹配(比如像括号、引号之类的) */
     pairMatch?: string[][];
+    /** 匹配时回调 */
     onMatched?: ScopeMatchedCallback;
+    /** 补全时回调 */
     onCompletion?: DocumentCompletionCallback;
-    _compiledPattern?: ScopePattern;
-    _grammar?: LanguageGrammar;
+    /** 编译模板 */
+    compiledPattern?: ScopePattern;
+    /** 语法定义 */
+    grammar?: LanguageGrammar;
 }
+/** 模板语法声明 */
 class GrammarPattern
 {
+    /** 字符串标签 */
     static String: GrammarPattern = { patterns: ["<string>"], name: "String" };
+    /** 数字标签 */
     static Number: GrammarPattern = { patterns: ['<number>'], name: "Number" };
+    /** 命名标签 */
     static Identifier: GrammarPattern = { patterns: ['<identifier>'], name: "Identifier" };
+
+    /** 模板集 */
     patterns: string[];
+    /** 是否懒惰匹配 */
     caseInsensitive?: boolean = false;
+    /** 模板声明 */
     dictionary?: PatternDictionary;
+    /**  */
     keepSpace?: boolean = false;
+    /** 名称 */
     name?: string;
+    /** 编号 */
     id?: string;
+    /** 严格匹配 */
     strict?: boolean = false;
+    /** 跨行识别 */
     crossLine?: boolean = false;
+    /** 域声明 */
     scopes?: ScopeDictionary;
+    /** 递归匹配 */
     recursive?: boolean = false;
 
+    /** 匹配时回调 */
     onMatched?: PatternMatchedCallback;
+    /** 诊断时回调 */
     onDiagnostic?: DocumentDiagnoseCallback;
+    /** 补全时回调 */
     onCompletion?: DocumentCompletionCallback;
-    _parent?: GrammarPattern;
-    _nameInParent?: string;
-    _scope?: GrammarScope;
-    _compiledPattern?: PatternItem;
-    _grammar?: LanguageGrammar;
-    _compiling?: boolean = false;
+
+    /** 父语法模板 */
+    parent?: GrammarPattern;
+    /** 在父语法模板中的名称 */
+    nameInParent?: string;
+    /** 域语法声明 */
+    scope?: GrammarScope;
+    /** 语法模板 */
+    compiledPattern?: PatternItem;
+    /** 语法定义 */
+    grammar?: LanguageGrammar;
+    /** 编译时运行 */
+    compiling?: boolean = false;
 }
+/** 语法定义 */
 class LanguageGrammar
 {
+    /** 语法模板 */
     patterns?: GrammarPattern[];
+    /** 名称 */
     name?: string;
+    /** 排除模板列表 */
     ignore?: GrammarPattern;
+    /** 分隔符定义 */
     stringDelimiter?: string[];
+    /** 符号对匹配(比如像括号、引号之类的) */
     pairMatch?: string[][];
+    /** 模板声明 */
     patternRepository?: PatternDictionary;
+    /** 域声明 */
     scopeRepository?: ScopeDictionary;
+
+    /** 补全时回调 */
     onCompletion?: DocumentCompletionCallback;
 }
+/** 
+ * 括号分析
+ * @param item 待分析字符串
+ * @param pattern 分析使用的语法模板
+ * @return 匹配模板
+ */
 function analyseBracketItem(item: string, pattern: GrammarPattern): PatternItem
 {
     const buildInPattern: PatternItemDictionary = {
@@ -967,13 +1084,13 @@ function analyseBracketItem(item: string, pattern: GrammarPattern): PatternItem
             subPattern = buildInPattern[name](pattern);
         else if (pattern.dictionary && pattern.dictionary[name])
         {
-            pattern.dictionary[name]._grammar = pattern._grammar;
+            pattern.dictionary[name].grammar = pattern.grammar;
             subPattern = compilePattern(pattern.dictionary[name]);
         }
-        else if (pattern._grammar.patternRepository && pattern._grammar.patternRepository[name])
+        else if (pattern.grammar.patternRepository && pattern.grammar.patternRepository[name])
         {
-            pattern._grammar.patternRepository[name]._grammar = pattern._grammar;
-            subPattern = compilePattern(pattern._grammar.patternRepository[name]);
+            pattern.grammar.patternRepository[name].grammar = pattern.grammar;
+            subPattern = compilePattern(pattern.grammar.patternRepository[name]);
         }
         else
             subPattern = new IdentifierPattern(pattern);
@@ -1000,12 +1117,12 @@ function analyseBracketItem(item: string, pattern: GrammarPattern): PatternItem
         let scope: GrammarScope;
         if (pattern.scopes && pattern.scopes[name])
             scope = pattern.scopes[name];
-        else if (pattern._grammar.scopeRepository && pattern._grammar.scopeRepository[name])
-            scope = pattern._grammar.scopeRepository[name];
+        else if (pattern.grammar.scopeRepository && pattern.grammar.scopeRepository[name])
+            scope = pattern.grammar.scopeRepository[name];
 
         if (!scope)
             throw new Error("Pattern undefined.");
-        scope._grammar = pattern._grammar;
+        scope.grammar = pattern.grammar;
         return compileScope(scope, pattern);
     }
     else if (item.startsWith("/") && item.endsWith("/"))
@@ -1015,8 +1132,15 @@ function analyseBracketItem(item: string, pattern: GrammarPattern): PatternItem
         subPattern.name = reg;
         return subPattern;
     }
+
     throw new Error("Syntax Error.");
 }
+/**
+ * 模板分析
+ * @param item 待分析字符串
+ * @param pattern 分析使用的语法模板
+ * @returns 匹配模板
+ */
 function analysePatternItem(item: string, pattern: GrammarPattern): PatternItem
 {
     const bracketStart = ["<", "[", "{", "/"];
@@ -1106,15 +1230,20 @@ function analysePatternItem(item: string, pattern: GrammarPattern): PatternItem
     }
     return patternItem;
 }
+/**
+ * 编译模板: 将模板语法声明整理为匹配模板
+ * @param pattern 语法模板
+ * @returns 匹配模板
+ */
 function compilePattern(pattern: GrammarPattern): PatternItem
 {
     if (pattern === GrammarPattern.String)
         return new StringPattern(pattern);
-    if (pattern._compiledPattern)
-        return pattern._compiledPattern;
-    pattern._compiling = true;
+    if (pattern.compiledPattern)
+        return pattern.compiledPattern;
+    pattern.compiling = true;
     const patternList: OptionalPatternSet = new OptionalPatternSet(pattern, true);
-    pattern._compiledPattern = patternList;
+    pattern.compiledPattern = patternList;
     pattern.patterns.forEach(pt =>
     {
         const subPattern = analysePatternItem(pt, pattern);
@@ -1131,22 +1260,28 @@ function compilePattern(pattern: GrammarPattern): PatternItem
         if (!(pattern.id || pattern.onMatched || pattern.onCompletion || pattern.onDiagnostic))
         {
             patternList.subPatterns[0].ignorable = true;
-            pattern._compiledPattern = patternList.subPatterns[0];
+            pattern.compiledPattern = patternList.subPatterns[0];
             return patternList.subPatterns[0];
         }
     }
     return patternList;
 }
+/**
+ * 编译域: 将域语法声明整理为域模板
+ * @param scope 域语法声明
+ * @param pattern 模板语法声明
+ * @returns 域模板
+ */
 function compileScope(scope: GrammarScope, pattern: GrammarPattern): ScopePattern
 {
-    if (scope._compiledPattern)
-        return scope._compiledPattern;
+    if (scope.compiledPattern)
+        return scope.compiledPattern;
     const patternList = new ScopePattern(pattern, scope);
     patternList.addSubPattern(new TextPattern(pattern, scope.begin, false));
-    scope._compiledPattern = patternList;
+    scope.compiledPattern = patternList;
     scope.patterns.forEach(pt =>
     {
-        pt._grammar = pattern._grammar;
+        pt.grammar = pattern.grammar;
         const subPattern = compilePattern(pt);
         subPattern.ignorable = true;
         subPattern.multi = true;
@@ -1156,25 +1291,46 @@ function compileScope(scope: GrammarScope, pattern: GrammarPattern): ScopePatter
     patternList.name = scope.name ? scope.name : "Scope";
     return patternList;
 }
+/**
+ * 编译语法定义
+ * @param grammarDeclare 语法定义
+ * @returns 语法模板
+ */
 function compileGrammar(grammarDeclare: LanguageGrammar): Grammar
 {
     const grammar = new Grammar(grammarDeclare);
     grammarDeclare.patterns.forEach(pattern =>
     {
-        pattern._grammar = grammarDeclare;
+        pattern.grammar = grammarDeclare;
         const pt = compilePattern(pattern);
         grammar.addSubPattern(pt);
     });
     return grammar;
 }
+/**
+ * 匹配语法
+ * @param grammar 语法模板
+ * @param doc 文本
+ * @returns 
+ */
 function matchGrammar(grammar: Grammar, doc: TextDocument): GrammarMatchResult
 {
     return grammar.match(doc, 0);
 }
+/**
+ * 加入模板
+ * @param patternName 模板名
+ * @returns 模板语法声明
+ */
 function includePattern(patternName: string): GrammarPattern
 {
     return { patterns: [`<${patternName}>`] };
 }
+/**
+ * 命名模板
+ * @param patternName 模板名称
+ * @returns 模板语法声明
+ */
 function namedPattern(patternName: string): GrammarPattern
 {
     return { patterns: [`<${patternName}>`] };
