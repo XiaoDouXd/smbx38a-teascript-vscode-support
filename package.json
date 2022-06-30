@@ -11,20 +11,29 @@
     ],
     "activationEvents": [
         "onLanguage:smbxtea"
-	],
-	"main": "./client/out/extension",
+    ],
+    "main": "./client/out/extension",
     "contributes": {
-        "languages": [{
-            "id": "smbxtea",
-            "aliases": ["SMBX Teascript", "smbxtea"],
-            "extensions": [".smt"],
-            "configuration": "./language-configuration.json"
-        }],
-        "grammars": [{
-            "language": "smbxtea",
-            "scopeName": "source.smt",
-            "path": "./syntaxes/smbxtea.tmLanguage.json"
-        }],
+        "languages": [
+            {
+                "id": "smbxtea",
+                "aliases": [
+                    "SMBX Teascript",
+                    "smbxtea"
+                ],
+                "extensions": [
+                    ".smt"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "smbxtea",
+                "scopeName": "source.smt",
+                "path": "./syntaxes/vbs.tmLanguage"
+            }
+        ],
         "snippets": [
             {
                 "language": "shaderlab",
@@ -32,29 +41,33 @@
             }
         ],
         "commands": [
-			{
-				"command": "test.helloWorld",
-				"title": "Hello World"
-			}
-		]
+            {
+                "command": "test.helloWorld",
+                "title": "Hello World"
+            }
+        ]
     },
     "scripts": {
-		"vscode:prepublish": "npm run compile",
-		"compile": "tsc -b",
-		"watch": "tsc -b -w",
-		"postinstall": "cd client && npm install && cd ../server && npm install && cd .."
-	},
-	"devDependencies": {
-		"@types/vscode": "^1.68.0",
-		"@types/glob": "^7.2.0",
-		"@types/mocha": "^9.1.1",
-		"@types/node": "16.x",
-		"@typescript-eslint/eslint-plugin": "^5.27.0",
-		"@typescript-eslint/parser": "^5.27.0",
-		"eslint": "^8.16.0",
-		"glob": "^8.0.3",
-		"mocha": "^10.0.0",
-		"typescript": "^4.7.2",
-		"@vscode/test-electron": "^2.1.3"
-	}
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -b",
+        "watch": "tsc -b -w",
+        "postinstall": "cd client && npm install && cd ../server && npm install && cd .."
+    },
+    "devDependencies": {
+        "@types/glob": "^7.2.0",
+        "@types/mocha": "^9.1.1",
+        "@types/node": "16.x",
+        "@types/vscode": "^1.68.0",
+        "@typescript-eslint/eslint-plugin": "^5.27.0",
+        "@typescript-eslint/parser": "^5.27.0",
+        "@vscode/test-electron": "^2.1.3",
+        "eslint": "^8.16.0",
+        "glob": "^8.0.3",
+        "mocha": "^10.0.0",
+        "typescript": "^4.7.2"
+    },
+    "dependencies": {
+        "linq": "^4.0.0",
+        "log4js": "^6.5.2"
+    }
 }

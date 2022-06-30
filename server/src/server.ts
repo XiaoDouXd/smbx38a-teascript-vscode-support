@@ -1,7 +1,7 @@
-/* --------------------------------------------------------------------------------------------
- * Copyright (c) Microsoft Corporation. All rights reserved.
- * Licensed under the MIT License. See License.txt in the project root for license information.
- * ------------------------------------------------------------------------------------------ */
+// ================================================================
+// 服务端初始化和事件响应设置
+// ================================================================
+
 import {
   createConnection,
   TextDocuments,
@@ -24,15 +24,41 @@ import {
   DocumentHighlight,
   DocumentHighlightKind,
 } from "vscode-languageserver/node";
-
+import { configure, getLogger } from "log4js";
+configure({
+	appenders: {
+		lsp_demo: {
+			type: "dateFile",
+			filename: "/Users/ziyingliuziying/working/lsp_demo",
+			pattern: "yyyy-MM-dd-hh.log",
+			alwaysIncludePattern: true,
+		},
+	},
+	categories: { default: { appenders: ["lsp_demo"], level: "debug" } }
+});
+const logger = getLogger("lsp_demo");
+import { HandlerResult } from 'vscode-jsonrpc';
 import { TextDocument } from "vscode-languageserver-textdocument";
 
-// 关键点1： 初始化 LSP 连接对象
-const connection = createConnection(ProposedFeatures.all);
+// ---------------------------------------------------------------- 初始化连接对象
 
-// 关键点2： 创建文档集合对象，用于映射到实际文档
+// 初始化 LSP 连接对象
+// 连接对象对客户端-服务端的信息交互进行了封装
+// 协议中的所有的消息都有封装
+const connection = createConnection(ProposedFeatures.all);
+// 创建文档集合对象，用于映射到实际文档
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 
+// ---------------------------------------------------------------- 初始化事件响应
+
+// 服务端的声明周期从客户端发送 Initialize 请求开始
+// 本部分主要用于设置客户端事件该如何响应
+
+
+// 声明周期开始时会运行这个 onInitialize 函数
+// 该函数主要用于告知客户端该服务端支持的特性
+// 该信息用 capabilities: ServerCapabilities 类传递
+// ServerCapabilities 主要包括了 Workspace 和 TextDocument 两个方面的API
 connection.onInitialize((params: InitializeParams) => {
   // 明确声明插件支持的语言特性
   const result: InitializeResult = {
@@ -43,7 +69,7 @@ connection.onInitialize((params: InitializeParams) => {
       completionProvider: {
         resolveProvider: true,
       },
-      // hover 提示
+      // 悬停提示
       hoverProvider: true,
       // 签名提示
       signatureHelpProvider: {
@@ -58,18 +84,23 @@ connection.onInitialize((params: InitializeParams) => {
   return result;
 });
 
-// Make the text document manager listen on the connection
-// for open, change and close text document events
+// 完成握手后 客户端会返回 initialized notification 事件
+// 可以使用下面方法设置接收的响应
+connection.onInitialized(()=>{
+  connection.window.showInformationMessage('SMBX tea intellisense start.');
+});
+
+// 开启连接对象和文档对象监听事件
+connection.listen();
 documents.listen(connection);
 
-// Listen on the connection
-connection.listen();
+// -------------------------------------------------------------- 文档事件响应
 
 // 增量错误诊断
 documents.onDidChangeContent((change) => {
   const textDocument = change.document;
 
-  // The validator creates diagnostics for all uppercase words length 2 and more
+  // 若出现了两个以上长度的大写字符
   const text = textDocument.getText();
   const pattern = /\b[A-Z]{2,}\b/g;
   let m: RegExpExecArray | null;
@@ -85,21 +116,23 @@ documents.onDidChangeContent((change) => {
         end: textDocument.positionAt(m.index + m[0].length),
       },
       message: `${m[0]} is all uppercase.`,
-      source: "Diagnostics Demo",
+      source: "Diagnostics Test",
     };
     diagnostics.push(diagnostic);
   }
 
-  // Send the computed diagnostics to VSCode.
+  // 向 vsc 发送诊断
   connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 });
 
+// 悬停事件
 connection.onHover((params: HoverParams): Promise<Hover> => {
   return Promise.resolve({
-    contents: ["Hover Demo"],
+    contents: ["..."],
   });
 });
 
+// 文档格式化事件
 connection.onDocumentFormatting(
   (params: DocumentFormattingParams): Promise<TextEdit[]> => {
     const { textDocument } = params;
@@ -122,6 +155,7 @@ connection.onDocumentFormatting(
   }
 );
 
+// 文档字符高亮事件
 connection.onDocumentHighlight(
   (params: DocumentHighlightParams): Promise<DocumentHighlight[]> => {
     const { textDocument } = params;
@@ -143,6 +177,7 @@ connection.onDocumentHighlight(
   }
 );
 
+// 函数签名
 connection.onSignatureHelp(
   (params: SignatureHelpParams): Promise<SignatureHelp> => {
     return Promise.resolve({
@@ -164,12 +199,12 @@ connection.onSignatureHelp(
   }
 );
 
-// This handler provides the initial list of the completion items.
+// 代码补充提示
 connection.onCompletion(
   (_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
     return [
       {
-        label: "Tecvan",
+        label: "TypeScript",
         kind: CompletionItemKind.Text,
         data: 1,
       },
@@ -182,16 +217,16 @@ connection.onCompletion(
   }
 );
 
-// This handler resolves additional information for the item selected in
-// the completion list.
+// 代码补充详情
 connection.onCompletionResolve((item: CompletionItem): CompletionItem => {
   console.log("request completion resolve");
+
   if (item.data === 1) {
-    item.detail = "Tecvan is Awesome";
-    item.documentation = "公众号：Tecvan";
+    item.detail = "TypeScript is Awesome";
+    item.documentation = "...so on and so on";
   } else if (item.data === 2) {
-    item.detail = "Tecvan is Good At Javascript";
-    item.documentation = "公众号：Tecvan";
+    item.detail = "TypeScript is better then Javascript";
+    item.documentation = "...so on and so on";
   }
   return item;
 });
