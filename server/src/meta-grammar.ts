@@ -1,5 +1,5 @@
 // ================================================================
-// 语法分析知识库构建相关类的定义
+// 语法分析模板构建相关类的设计
 // ================================================================
 
 import { TextDocument } from "vscode-languageserver-textdocument";
@@ -12,7 +12,8 @@ type ScopeMatchedCallback = (scopeMatch: ScopeMatchResult) => void;
 type DocumentDiagnoseCallback = (unMatched: UnMatchedText) => Diagnostic[];
 type PatternItemDictionary = { [key: string]: (pattern: GrammarPattern) => PatternItem };
 
-/** 匹配模板基类: 是所有词汇捕获模板的基类 */
+// ----------------------------------------------------------------
+/** 匹配模板基类: 是所有词汇、段落捕获模板的基类 */
 abstract class PatternItem
 {
     /** 模板名称 */
@@ -579,7 +580,7 @@ class MatchResult
     matched = true;
     /** 域 */
     scope: GrammarScope;
-    /** 状态 */
+    /** 内容在上下文知识库中的形态 */
     state: any = null;
     /** 父级匹配结果(父段落) */
     parent: MatchResult = null;
@@ -1062,7 +1063,8 @@ class LanguageGrammar
     onCompletion?: DocumentCompletionCallback;
 }
 /** 
- * 括号分析
+ * 括号分析:
+ * 这里使用的括号有四种"[]"、"<>"、"{}"、"//", 分别标记"可有可无片段"、"必要片段"、"域"、"正则表达式"
  * @param item 待分析字符串
  * @param pattern 分析使用的语法模板
  * @return 匹配模板
@@ -1143,6 +1145,7 @@ function analyseBracketItem(item: string, pattern: GrammarPattern): PatternItem
  */
 function analysePatternItem(item: string, pattern: GrammarPattern): PatternItem
 {
+    // 一些重要元符号
     const bracketStart = ["<", "[", "{", "/"];
     const bracketEnd = [">", "]", "}", "/"];
     const spaceChars = [" "];
@@ -1336,7 +1339,7 @@ function namedPattern(patternName: string): GrammarPattern
     return { patterns: [`<${patternName}>`] };
 }
 
-
+// ----------------------------------------------------------------
 export
 {
     LanguageGrammar,
