@@ -2,8 +2,15 @@
 // 构建 smbx teascript 的语法模板
 // ================================================================
 
-import { TeaContext, TeaVar, teaBuildinTypesCompletion } from './tea-context';
-import { LanguageGrammar, GrammarPattern } from './meta-grammar';
+import { 
+    TeaContext, TeaVar, TeaFunc, 
+    teaBuildinTypesCompletion, teaGlobalContext,
+    createCompletionItemsForFunc,
+    createCompletionItemsForVar
+} from './tea-context';
+import { getObjectType } from './tea-matchfunctions';
+import { LanguageGrammar, GrammarPattern, getMatchedProps, includePattern } from './meta-grammar';
+import { CompletionItemKind } from 'vscode-languageserver';
 
 /** tea 语言的语法模板 */
 const teaGrammarParttern: LanguageGrammar = {
@@ -35,7 +42,7 @@ const teaGrammarParttern: LanguageGrammar = {
     ],
     patternRepository: {
         // 变量定义
-        "varDeclare": {
+        "var-declare": {
             name: "Var Declare",
             crossLine: true,
             patterns: [
@@ -45,11 +52,11 @@ const teaGrammarParttern: LanguageGrammar = {
                 "type": GrammarPattern.Identifier,
                 "name": GrammarPattern.Identifier,
             },
-            onMatched: (metch) =>
+            onMatched: (match) =>
             {
-                const type = metch.getMatch("type")[0].text;
-                const name = metch.getMatch("name")[0].text;
-                const context = metch.matchedScope.state as TeaContext;
+                const type = match.getMatch("type")[0].text;
+                const name = match.getMatch("name")[0].text;
+                const context = match.matchedScope.state as TeaContext;
                 context.addVariable(new TeaVar(context.getType(type), name));
             },
         },
@@ -91,26 +98,87 @@ const teaGrammarParttern: LanguageGrammar = {
                     patterns: ["/(((\\+|-|\\*|\\/|%|=|&|\\||\\^|<<|>>)=?)|(<|>|<=|>=|==|\\!=|\\|\\||&&)|(\\.|\\?|\\:|~|,))/"]
                 }
             },
+            onCompletion: (match) => {
+                const context = match.matchedScope.state as TeaContext;
+                if (match.patternName === "expr-unit")
+                {
+                    return createCompletionItemsForVar(context.getAllVariables())
+                        .concat(createCompletionItemsForFunc(teaGlobalContext.functions));
+                }
+                else if (match.patternName === "operator")
+                {
+                    if (match.text === ".")
+                    {
+                        const context = match.matchedScope.state as TeaContext;
+                        const prevIdx = match.parent.parent.children.indexOf(match.parent) - 1;
+                        const prevMatch = match.parent.parent.children[prevIdx];
+                        const type = getObjectType(prevMatch,context);
+                        if (type.orderedMenber)
+                        {
+                            // 排序基数
+                            const base = 1000;
+                            return type.members.map((member, idx) =>
+                            {
+                                return {
+                                    label: member.name,
+                                    detail: member.toString(),
+                                    sortText: (base + idx).toString(),
+                                    kind: CompletionItemKind.Field
+                                };
+                            });
+                        }
+                        else
+                        {
+                            return type.members.map((member) =>
+                            {
+                                return {
+                                    label: member.name,
+                                    detail: member.toString(),
+                                    kind: CompletionItemKind.Field
+                                };
+                            });
+                        }
+                    }
+                }
+                return [];
+            },
+        },
+        // 括号表达式定义
+        "bracket": {
+            name: "Bracket",
+            patterns: ["(<expression>)"]
         },
         // 函数参数声明
-        "funcParamsDeclare": {
+        "func-params-declare": {
             name: "Params Declare",
             patterns: ["<name> As <type> [= <expression>]"],
             dictionary: {
                 "type": GrammarPattern.Identifier,
                 "name": GrammarPattern.Identifier,
             },
+            onMatched: (match)=>{
+                const type = getMatchedProps(match, "type");
+                const name = getMatchedProps(match, "name");
+                const func = match.matchedPattern.state as TeaFunc;
+                func.addParameter(new TeaVar(teaGlobalContext.getType(type), name));
+            }
         },
         // 函数体定义
-        "funcDefinition": {
+        "func-definition": {
             name: "Function Definition",
-            patterns: ["[Export] Script <name>([<funcParamsDeclare>][,<funcParamsDeclare>...][,Return <type>]){block} End Script"],
+            patterns: ["[Export] Script <name>([<func-params-declare>][,<func-params-declare>...][,Return <type>]){block} End Script"],
             dictionary: {
                 "type": GrammarPattern.Identifier,
                 "name": GrammarPattern.Identifier,
             },
             crossLine: true,
-            // onMatched: onFunctionMatch,
+            onMatched: (match)=>{
+                const type = getMatchedProps(match, "type");
+                const name = getMatchedProps(match, "name");
+                const func = new TeaFunc(teaGlobalContext.getType(type), name);
+                teaGlobalContext.addFunction(func);
+                match.state = func;
+            },
             onCompletion: (match) =>
             {
                 if (match.patternName === "type")
@@ -120,10 +188,58 @@ const teaGrammarParttern: LanguageGrammar = {
                 return [];
             }
         },
-        // 函数调用定义
-        "funcCall": {
+
+        // ------------------------------------------- 调用定义
+        // Call 修饰的函数调用
+        "func-call-prefix": {
+            name: "Function Call Prefix",
+            patterns: ["Call <identifier>(<expression> [, <expression> ...])"]
+        },
+        // 变量函数调用
+        "func-call-val": {
+            name: "Function Call Var",
+            patterns: ["<name>(<var-name>)"],
+            dictionary: {
+                "name": {
+                    patterns: [
+                        "Array", "Val", "GVal"
+                    ],
+                },
+                "var-name": GrammarPattern.Identifier
+            }
+        },
+        // 函数调用
+        "func-call": {
             name: "Function Call",
-            patterns: ["<identifier> (<expression> [, <expression> ...])"]
+            patterns: ["<name>(<expression> [, <expression> ...])"],
+            dictionary: {
+                "name": GrammarPattern.Identifier
+            }
+        }
+    },
+    scopeRepository: {
+        "block": {
+            name : "block",
+            begin: "",
+            end: "",
+            patterns: [
+                includePattern("varDeclare"),
+                {
+                    name: "Statement",
+                    id:"statement",
+                    patterns: ["<expression>"]
+                },
+                {
+                    name: "If",
+                    id:"if-structure",
+                    patterns: ["If [<expression>] Then {block} [<elseif-block> ...] [<else-block>] End If"]
+                },
+                {
+                    name: "For Loop",
+                    id:"for-structure",
+                    patterns: ["For <val> {block} next"]
+                }
+            ]
         }
     }
 };

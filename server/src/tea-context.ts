@@ -168,8 +168,23 @@ class TeaGlobalContext extends TeaContext
         this.functions.push(func);
     }
 }
-/** 全局上下文 */
+/** 脚本上下文 */
 const teaGlobalContext = new TeaGlobalContext();
+/** SMBX 全局上下文 */
+const smbxGlobalContext = new TeaGlobalContext();
+/** 内建函数 */
+class BuildinFunc{
+    
+}
+/** 内建变量 */
+class BuildinVar{
+
+}
+/** 初始化全局上下文 */
+function initSMBXGlobalContext(funcs: BuildinFunc, vars: BuildinVar)
+{
+    // 初始化
+}
 
 /** 类型描述 */
 class TeaType{
@@ -370,7 +385,7 @@ export
     TeaType,
     TeaVar,
     TeaContext,
-    TeaFunc as TeaFunction,
+    TeaFunc,
     TeaArray,
     createCompletionItemsForVar,
     createCompletionItemsForFunc,

@@ -18,8 +18,7 @@ abstract class PatternItem
 {
     /** 模板名称 */
     name = "pattern";
-    /** 父模板 */
-    parent?: OrderedPatternSet;
+
     /** 严格匹配 */
     strict = false;
     /** 可忽略的 */
@@ -28,6 +27,10 @@ abstract class PatternItem
     multi = false;
     /** 语法模板 */
     pattern: GrammarPattern;
+    /** 父模板 */
+    parent?: OrderedPatternSet;    
+    /** 排除字段 */
+    ignore?: RegExp;
 
     /**
      * 匹配方法
@@ -149,8 +152,17 @@ class RegExpPattern extends PatternItem
         const text = doc.getText().substring(startOffset);
 
         // 通过该模板默认的正则表达式匹配
-        const regMatch = this.regExp.exec(text);
         const match = new MatchResult(doc, this);
+        
+        // 匹配排除模板
+        if (this.ignore && this.ignore.exec(text)[0] == text)
+        {
+            match.endOffset = startOffset;
+            match.matched = false;
+            return match;
+        }
+
+        const regMatch = this.regExp.exec(text);
         match.startOffset = startOffset;
         if (!regMatch || regMatch.index !== 0)
         {
@@ -165,7 +177,7 @@ class RegExpPattern extends PatternItem
         return match;
     }
 }
-/** 未命名模板: 可以以其它一些模板为原型复制出一些新模板 */
+/** 重命名模板: 可以以其它一些模板为原型复制出一些新模板 */
 class NamedPattern extends PatternItem
 {
     patternItem: PatternItem;
@@ -758,7 +770,6 @@ class ScopeMatchResult extends MatchResult
                 }
             }
             matchList = matchList.concat(subMatch.children);
-
         }
     }
 }
@@ -1006,7 +1017,7 @@ class GrammarPattern
     caseInsensitive?: boolean = false;
     /** 模板声明 */
     dictionary?: PatternDictionary;
-    /**  */
+    /** 保留空格 */
     keepSpace?: boolean = false;
     /** 名称 */
     name?: string;
@@ -1062,9 +1073,11 @@ class LanguageGrammar
     /** 补全时回调 */
     onCompletion?: DocumentCompletionCallback;
 }
+
+// ---------------------------------------------------------------- 相关方法
 /** 
  * 括号分析:
- * 这里使用的括号有四种"[]"、"<>"、"{}"、"//", 分别标记"可有可无片段"、"必要片段"、"域"、"正则表达式"
+ * 这里使用的括号有四种"[]"、"<>"、"{}"、"//", 分别标记"可有可无片段"、"引用的声明片段"、"域"、"正则表达式"
  * @param item 待分析字符串
  * @param pattern 分析使用的语法模板
  * @return 匹配模板
@@ -1338,19 +1351,37 @@ function namedPattern(patternName: string): GrammarPattern
 {
     return { patterns: [`<${patternName}>`] };
 }
+/**
+ * 从匹配结果中匹配结果
+ * @param match 匹配结果
+ * @param name 要匹配的模板
+ * @param defaultValue 无匹配结果时传递的默认值
+ * @returns 匹配结果的匹配结果
+ */
+function getMatchedProps(match: PatternMatchResult|UnMatchedPattern, name: string, defaultValue: string = null)
+{
+    if (!match)
+        return defaultValue;
+    const value = match.getMatch(name)[0];
+    if (!value)
+        return defaultValue;
+    return value.text;
+}
 
 // ----------------------------------------------------------------
 export
 {
     LanguageGrammar,
     GrammarPattern,
-    compileGrammar,
-    matchGrammar,
     GrammarScope,
-    includePattern,
-    namedPattern,
     MatchResult,
     PatternMatchResult,
     ScopeMatchResult,
-    UnMatchedPattern
+    UnMatchedPattern,
+
+    includePattern,
+    namedPattern,
+    compileGrammar,
+    matchGrammar,
+    getMatchedProps
 };
