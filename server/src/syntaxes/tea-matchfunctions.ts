@@ -7,15 +7,12 @@ import { TeaContext, TeaType, TeaArray } from "./tea-context";
  * @param context 上下文
  * @returns 对象类型
  */
-function getObjectType(match: MatchResult, context: TeaContext): TeaType
-{
+function getObjectType(match: MatchResult, context: TeaContext): TeaType {
     const reg = /([_a-zA-Z][_a-zA-Z0-9]*)/;
     let name = "";
 
-    if (match.children.length === 2)
-    {
-        if (match.children[0].text === ".")
-        {
+    if (match.children.length === 2) {
+        if (match.children[0].text === ".") {
             const prevIdx = match.parent.children.indexOf(match) - 1;
             const prevMatch = match.parent.children[prevIdx];
             const t = getObjectType(prevMatch, context);
@@ -25,8 +22,7 @@ function getObjectType(match: MatchResult, context: TeaContext): TeaType
         }
         name = match.children[1].text;
     }
-    else
-    {
+    else {
         name = match.text;
     }
     const result = reg.exec(name);
@@ -34,7 +30,6 @@ function getObjectType(match: MatchResult, context: TeaContext): TeaType
 
 }
 
-export
-{
+export {
     getObjectType
 };

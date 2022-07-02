@@ -2,11 +2,12 @@
 // 构建 smbx teascript 的语法模板
 // ================================================================
 
-import { 
-    TeaContext, TeaVar, TeaFunc, 
-    teaBuildinTypesCompletion, teaGlobalContext,
+import {
+    TeaContext, TeaVar, TeaFunc,
+    teaBuildinTypesCompletion,
     createCompletionItemsForFunc,
-    createCompletionItemsForVar
+    createCompletionItemsForVar,
+    TeaGlobalContext
 } from './tea-context';
 import { getObjectType } from './tea-matchfunctions';
 import { LanguageGrammar, GrammarPatternDeclare, getMatchedProps, includePattern } from './meta-grammar';
@@ -36,8 +37,10 @@ const teaGrammarParttern: LanguageGrammar = {
             name: "Global",
             id: "global",
             patterns: [
-                "var-declare",
-                "func-definition"
+                "<var-declare>",
+                "<func-definition>",
+                "<expression>",
+
             ]
         }
     ],
@@ -53,8 +56,7 @@ const teaGrammarParttern: LanguageGrammar = {
                 "type": GrammarPatternDeclare.Identifier,
                 "name": GrammarPatternDeclare.Identifier,
             },
-            onMatched: (match) =>
-            {
+            onMatched: (match) => {
                 const type = match.getMatch("type")[0].text;
                 const name = match.getMatch("name")[0].text;
                 const context = match.matchedScope.state as TeaContext;
@@ -87,12 +89,12 @@ const teaGrammarParttern: LanguageGrammar = {
                         "unary-operator": {
                             name: "Unary Operator",
                             patterns: ["!", "+", "-", "~", "++",
-                            "--", "*", "&", " Not ", " And ",
-                            " Or ", " Xor ", " Eqv ", " Imp "]
+                                "--", "*", "&", " Not ", " And ",
+                                " Or ", " Xor ", " Eqv ", " Imp "]
                         },
                         "postfix": {
                             name: "Postfix Operator",
-                            patterns: ["++", "--","\\[<expression>\\]"]
+                            patterns: ["++", "--", "\\[<expression>\\]"]
                         }
                     }
                 },
@@ -103,25 +105,20 @@ const teaGrammarParttern: LanguageGrammar = {
             },
             onCompletion: (match) => {
                 const context = match.matchedScope.state as TeaContext;
-                if (match.patternName === "expr-unit")
-                {
+                if (match.patternName === "expr-unit") {
                     return createCompletionItemsForVar(context.getAllVariables())
-                        .concat(createCompletionItemsForFunc(teaGlobalContext.functions));
+                        .concat(createCompletionItemsForFunc(context.global.functions));
                 }
-                else if (match.patternName === "operator")
-                {
-                    if (match.text === ".")
-                    {
+                else if (match.patternName === "operator") {
+                    if (match.text === ".") {
                         const context = match.matchedScope.state as TeaContext;
                         const prevIdx = match.parent.parent.children.indexOf(match.parent) - 1;
                         const prevMatch = match.parent.parent.children[prevIdx];
-                        const type = getObjectType(prevMatch,context);
-                        if (type.orderedMenber)
-                        {
+                        const type = getObjectType(prevMatch, context);
+                        if (type.orderedMenber) {
                             // 排序基数
                             const base = 1000;
-                            return type.members.map((member, idx) =>
-                            {
+                            return type.members.map((member, idx) => {
                                 return {
                                     label: member.name,
                                     detail: member.toString(),
@@ -130,10 +127,8 @@ const teaGrammarParttern: LanguageGrammar = {
                                 };
                             });
                         }
-                        else
-                        {
-                            return type.members.map((member) =>
-                            {
+                        else {
+                            return type.members.map((member) => {
                                 return {
                                     label: member.name,
                                     detail: member.toString(),
@@ -159,11 +154,11 @@ const teaGrammarParttern: LanguageGrammar = {
                 "type": GrammarPatternDeclare.Identifier,
                 "name": GrammarPatternDeclare.Identifier,
             },
-            onMatched: (match)=>{
+            onMatched: (match) => {
                 const type = getMatchedProps(match, "type");
                 const name = getMatchedProps(match, "name");
                 const func = match.matchedPattern.state as TeaFunc;
-                func.addParameter(new TeaVar(teaGlobalContext.getType(type), name));
+                func.addParameter(new TeaVar(func.functionContext.getType(type), name));
             }
         },
         // 函数体定义
@@ -175,17 +170,16 @@ const teaGrammarParttern: LanguageGrammar = {
                 "name": GrammarPatternDeclare.Identifier,
             },
             crossLine: true,
-            onMatched: (match)=>{
+            onMatched: (match) => {
                 const type = getMatchedProps(match, "type");
                 const name = getMatchedProps(match, "name");
-                const func = new TeaFunc(teaGlobalContext.getType(type), name);
-                teaGlobalContext.addFunction(func);
+                const context = match.matchedScope.state as TeaGlobalContext;
+                const func = new TeaFunc(context.getType(type), name);
+                context.addFunction(func);
                 match.state = func;
             },
-            onCompletion: (match) =>
-            {
-                if (match.patternName === "type")
-                {
+            onCompletion: (match) => {
+                if (match.patternName === "type") {
                     return teaBuildinTypesCompletion;
                 }
                 return [];
@@ -205,7 +199,7 @@ const teaGrammarParttern: LanguageGrammar = {
         // goto 目标声明
         "goto-flag": {
             name: "GoTo Flag",
-            patterns: [ "<name>:" ],
+            patterns: ["<name>:"],
             dictionary: {
                 "name": GrammarPatternDeclare.Identifier
             },
@@ -261,25 +255,25 @@ const teaGrammarParttern: LanguageGrammar = {
     },
     scopeRepository: {
         "block": {
-            name : "Block",
+            name: "Block",
             begin: [""],
             end: ["End If", "ElseIf", "Else", "End Script", "End With", "Next", "Loop", "End Select"],
-            
+
             patterns: [
                 includePattern("varDeclare"),
                 {
                     name: "Statement",
-                    id:"statement",
+                    id: "statement",
                     patterns: ["<expression>"]
                 },
                 {
                     name: "If",
-                    id:"if-structure",
+                    id: "if-structure",
                     patterns: ["If <expression> Then {block} [ElseIf <expression> Then {block} ...] [Else {block}] End If"]
                 },
                 {
                     name: "For Loop",
-                    id:"for-loop",
+                    id: "for-loop",
                     patterns: ["For <func-call-val>=<expression> To <expression> [Step <number>] {block} next"],
                 },
                 {

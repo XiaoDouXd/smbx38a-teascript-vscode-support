@@ -4,45 +4,45 @@
 
 import { configure, getLogger } from "log4js";
 configure({
-	appenders: {
-		smbx_tea: {
-			type: "dateFile",
-			filename: "./xiaodou_logs/smbx_tea",
-			pattern: "yyyy-MM-dd-hh.log",
-			alwaysIncludePattern: true,
-		},
-	},
-	categories: { default: { appenders: ["smbx_tea"], level: "debug" } }
+    appenders: {
+        smbx_tea: {
+            type: "dateFile",
+            filename: "./xiaodou_logs/smbx_tea",
+            pattern: "yyyy-MM-dd-hh.log",
+            alwaysIncludePattern: true,
+        },
+    },
+    categories: { default: { appenders: ["smbx_tea"], level: "debug" } }
 });
 const logger = getLogger("smbx_tea");
 
 import {
-  createConnection,
-  TextDocuments,
-  Diagnostic,
-  DiagnosticSeverity,
-  ProposedFeatures,
-  InitializeParams,
-  CompletionItem,
-  CompletionItemKind,
-  TextDocumentPositionParams,
-  TextDocumentSyncKind,
-  InitializeResult,
-  HoverParams,
-  Hover,
-  SignatureHelpParams,
-  SignatureHelp,
-  DocumentFormattingParams,
-  TextEdit,
-  DocumentHighlightParams,
-  DocumentHighlight,
-  DocumentHighlightKind,
-  CompletionParams,
+    createConnection,
+    TextDocuments,
+    Diagnostic,
+    DiagnosticSeverity,
+    ProposedFeatures,
+    InitializeParams,
+    CompletionItem,
+    CompletionItemKind,
+    TextDocumentPositionParams,
+    TextDocumentSyncKind,
+    InitializeResult,
+    HoverParams,
+    Hover,
+    SignatureHelpParams,
+    SignatureHelp,
+    DocumentFormattingParams,
+    TextEdit,
+    DocumentHighlightParams,
+    DocumentHighlight,
+    DocumentHighlightKind,
+    CompletionParams,
 } from 'vscode-languageserver/node';
-import { compileGrammar, matchGrammar } from './meta-grammar';
-import teaGrammarParttern from './tea-grammarparttern';
+import { compileGrammar, matchGrammar } from './syntaxes/meta-grammar';
+import teaGrammarParttern from './syntaxes/tea-grammarparttern';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { treeBuilder } from './tea-treebuilder';
+import { treeBuilder } from './syntaxes/tea-treebuilder';
 
 // ---------------------------------------------------------------- 初始化连接对象
 
@@ -67,72 +67,69 @@ const documentList = new Map<string, TextDocument>();
 // 该信息用 capabilities: ServerCapabilities 类传递
 // ServerCapabilities 主要包括了 Workspace 和 TextDocument 两个方面的API
 connection.onInitialize((params: InitializeParams) => {
-  // 明确声明插件支持的语言特性
-  const result: InitializeResult = {
-    capabilities: {
-      // 增量处理
-      textDocumentSync: TextDocumentSyncKind.Incremental,
-      // 代码补全
-      completionProvider: {
-        resolveProvider: true,
-        triggerCharacters: ["."," ","="]
-      },
-      // // 悬停提示
-      // hoverProvider: true,
-      // // 签名提示
-      // signatureHelpProvider: {
-      //   triggerCharacters: ["("],
-      // },
-      // // 格式化
-      // documentFormattingProvider: true,
-      // // 语言高亮
-      // documentHighlightProvider: true,
-    },
-  };
+    // 明确声明插件支持的语言特性
+    const result: InitializeResult = {
+        capabilities: {
+            // 增量处理
+            textDocumentSync: TextDocumentSyncKind.Incremental,
+            // 代码补全
+            completionProvider: {
+                resolveProvider: true,
+                triggerCharacters: [".", " ", "="]
+            },
+            // // 悬停提示
+            // hoverProvider: true,
+            // // 签名提示
+            // signatureHelpProvider: {
+            //   triggerCharacters: ["("],
+            // },
+            // // 格式化
+            // documentFormattingProvider: true,
+            // // 语言高亮
+            // documentHighlightProvider: true,
+        },
+    };
 
-  return result;
+    return result;
 });
 
 // 完成握手后 客户端会返回 initialized notification 事件
 // 可以使用下面方法设置接收的响应
-connection.onInitialized(()=>{
-  connection.window.showInformationMessage('SMBX tea intellisense start.');
+connection.onInitialized(() => {
+    console.log("SMBX tea intellisense start.");
+    connection.window.showInformationMessage('SMBX tea intellisense start.');
 });
 
 // -------------------------------------------------------------- 设置文档事件响应
 
-documents.onDidOpen(e =>
-{
+documents.onDidOpen(e => {
     documentList.set(e.document.uri, e.document);
 });
 
-documents.onDidClose(e =>
-{
+documents.onDidClose(e => {
     documentList.delete(e.document.uri);
 });
 
-connection.onCompletion((docPos: CompletionParams): CompletionItem[] =>
-{
-    try
-    {
+connection.onCompletion((docPos: CompletionParams): CompletionItem[] => {
+    try {
         const startTime = new Date().getTime();
+        connection.window.showInformationMessage('ASDFGHJKL');
         const match = matchGrammar(compiledTeaGrammar, documentList.get(docPos.textDocument.uri));
         const completions = match.requestCompletion(docPos.position);
         const endTime = new Date().getTime();
-        console.log(treeBuilder());
+
         return completions;
     }
-    catch (ex)
-    {
+    catch (ex) {
         console.error(ex);
     }
 });
 
 // 悬停事件
 connection.onHover((params: HoverParams): Promise<Hover> => {
-  return Promise.resolve({
-    contents: ["..."],
-  });
+    return Promise.resolve({
+        contents: ["..."],
+    });
 });
 
 // -------------------------------------------------------------- 开启事件监听
