@@ -47,6 +47,8 @@ abstract class PatternItem
     {
         this.pattern = pattern;
         this.ignorable = ignorable;
+
+        if (pattern.ignore) this.ignore = pattern.ignore;
     }
     toString(): string
     {
@@ -1031,6 +1033,8 @@ class GrammarPattern
     scopes?: ScopeDictionary;
     /** 递归匹配 */
     recursive?: boolean = false;
+    /** 排除结果 */
+    ignore?: RegExp;
 
     /** 匹配时回调 */
     onMatched?: PatternMatchedCallback;
@@ -1109,6 +1113,7 @@ function analyseBracketItem(item: string, pattern: GrammarPattern): PatternItem
         }
         else
             subPattern = new IdentifierPattern(pattern);
+        
         subPattern.ignorable = false;
         return new NamedPattern(pattern, name, subPattern);
     }

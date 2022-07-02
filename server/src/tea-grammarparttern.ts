@@ -213,7 +213,12 @@ const teaGrammarParttern: LanguageGrammar = {
             name: "Function Call",
             patterns: ["<name>(<expression> [, <expression> ...])"],
             dictionary: {
-                "name": GrammarPattern.Identifier
+                "name": {
+                    patterns: [
+                        "<identifier>"
+                    ],
+                    ignore: /(Array|Val|GVal)/g
+                }
             }
         }
     },
