@@ -2,9 +2,11 @@
 // 设计描述 smbx teascript 上下文信息的数据结构
 // ================================================================
 
-import linq from "linq";
-import { type } from "os";
-import { CompletionItem, CompletionItemKind } from "vscode-languageserver";
+import { type } from 'os';
+import { CompletionItem, CompletionItemKind } from 'vscode-languageserver';
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const linq = require('linq');
 
 // ---------------------------------------------------------------- 一些类型的枚举
 const numTypes = ["Integer", "Double", "Byte", "Long"];
@@ -40,6 +42,128 @@ const teaBuildinKeywordCompletion: CompletionItem[]
     });
 
 // ---------------------------------------------------------------- 语法结构描述
+/** 类型描述 */
+class TeaType{
+    /** 类型名 */
+    name: string;
+    /** 成员名 */
+    members: TeaVar[];
+    /** 是否有序 */
+    orderedMenber = false;
+
+    /**
+     * @param name 类型名
+     * @param members 所有成员变量
+     */
+    constructor(name: string, members: TeaVar[] = [])
+    {
+        this.name = name;
+        this.members = members;
+    }
+
+    /** 
+     * 添加成员
+     * @param value 成员变量
+     */
+    addMember(value: TeaVar)
+    {
+        value.context = null;
+        this.members.push(value);
+    }
+    /** 
+     * 获取成员
+     * @param name 成员名
+     */
+    getMember(name: string): TeaVar
+    {
+        return linq.from(this.members)
+            .where((member: TeaVar) => member.name === name)
+            .firstOrDefault();
+    }
+}
+/** 数组类型描述 */
+class TeaArray extends TeaType
+{
+    elementTypeName: string;
+    get elementType() { return teaGlobalContext.getType(this.elementTypeName); }
+    constructor(element: string)
+    {
+        super(`${element}[]`);
+        this.elementTypeName = element;
+    }
+}
+/** 变量描述 */
+class TeaVar{
+    /** 变量类型 */
+    type: TeaType;
+    /** 变量名 */
+    name: string;
+    /** 变量所属上下文 */
+    context: TeaContext;
+
+    /**
+     * @param type 变量类型
+     * @param name 变量名
+     */
+    constructor(type: TeaType, name: string)
+    {
+        this.type = type;
+        this.name = name;
+    }
+    toString()
+    {
+        return `${this.name} As ${this.type.name}`;
+    }
+}
+/** 函数描述 */
+class TeaFunc{
+    /** 返回类型 */
+    type: TeaType;
+    /** 函数名 */
+    name: string;
+    /** 参数表 */
+    parameters: TeaVar[] = [];
+    /** 函数本体的上下文 */
+    functionContext: TeaContext;
+    /** 跨域函数 */
+    export = false;
+
+    /**
+     * @param type 返回类型
+     * @param name 函数名
+     * @param params 参数列表
+     */
+    constructor(type: TeaType, name: string, params: TeaVar[] = [])
+    {
+        this.type = type;
+        this.name = name;
+        this.parameters = params;
+    }
+    /**
+     * 添加参数
+     * @param param 变量描述类
+     */
+    addParameter(param: TeaVar)
+    {
+        this.parameters.push(param);
+        if (this.functionContext)
+            this.functionContext.addVariable(param);
+    }
+    /**
+     * 设置函数覆盖的上下文
+     * @param context 上下文描述类
+     */
+    setFunctionContext(context: TeaContext)
+    {
+        this.functionContext = context;
+        teaGlobalContext.addContext(context);
+        this.parameters.forEach(param => context.addVariable(param));
+    }
+    toString()
+    {
+        return `${this.export == false ? "" : "Export"} Script ${this.name}(${this.parameters.map(param => param.toString()).join(", ")} ${type.name === "Void" ? "" : `, Return ${type.name}`})`;
+    }
+}
 /** 上下文描述类 */
 class TeaContext{
     /** 上一层(父)上下文 */
@@ -74,7 +198,7 @@ class TeaContext{
      */
     getVariable(name: string): TeaVar
     {
-        const v = linq.from(this.variables).where(variable => variable.name === name).firstOrDefault();
+        const v = linq.from(this.variables).where((variable: TeaVar) => variable.name === name).firstOrDefault();
         if (!v)
         {
             return this.upper ? this.upper.getVariable(name) : null;
@@ -97,7 +221,7 @@ class TeaContext{
         else if (teaBuildinTypes.indexOf(name) >= 0)
             return new TeaType(name);
         
-        const t = linq.from(teaGlobalContext.declaredTypes).where(t => t.name === name).firstOrDefault();
+        const t = linq.from(teaGlobalContext.declaredTypes).where((t: TeaType) => t.name === name).firstOrDefault();
         return t ? t : new TeaType(`${name}?`);
     }
     /**
@@ -184,129 +308,6 @@ class BuildinVar{
 function initSMBXGlobalContext(funcs: BuildinFunc, vars: BuildinVar)
 {
     // 初始化
-}
-
-/** 类型描述 */
-class TeaType{
-    /** 类型名 */
-    name: string;
-    /** 成员名 */
-    members: TeaVar[];
-    /** 是否有序 */
-    orderedMenber = false;
-
-    /**
-     * @param name 类型名
-     * @param members 所有成员变量
-     */
-    constructor(name: string, members: TeaVar[] = [])
-    {
-        this.name = name;
-        this.members = members;
-    }
-
-    /** 
-     * 添加成员
-     * @param value 成员变量
-     */
-    addMember(value: TeaVar)
-    {
-        value.context = null;
-        this.members.push(value);
-    }
-    /** 
-     * 获取成员
-     * @param name 成员名
-     */
-    getMember(name: string): TeaVar
-    {
-        return linq.from(this.members)
-            .where(member => member.name === name)
-            .firstOrDefault();
-    }
-}
-/** 数组类型描述 */
-class TeaArray extends TeaType
-{
-    elementTypeName: string;
-    get elementType() { return teaGlobalContext.getType(this.elementTypeName); }
-    constructor(element: string)
-    {
-        super(`${element}[]`);
-        this.elementTypeName = element;
-    }
-}
-/** 变量描述 */
-class TeaVar{
-    /** 变量类型 */
-    type: TeaType;
-    /** 变量名 */
-    name: string;
-    /** 变量所属上下文 */
-    context: TeaContext;
-
-    /**
-     * @param type 变量类型
-     * @param name 变量名
-     */
-    constructor(type: TeaType, name: string)
-    {
-        this.type = type;
-        this.name = name;
-    }
-    toString()
-    {
-        return `Dim ${this.name} As ${this.type.name}`;
-    }
-}
-/** 函数描述 */
-class TeaFunc{
-    /** 返回类型 */
-    type: TeaType;
-    /** 函数名 */
-    name: string;
-    /** 参数表 */
-    parameters: TeaVar[] = [];
-    /** 函数本体的上下文 */
-    functionContext: TeaContext;
-    /** 跨域函数 */
-    export = false;
-
-    /**
-     * @param type 返回类型
-     * @param name 函数名
-     * @param params 参数列表
-     */
-    constructor(type: TeaType, name: string, params: TeaVar[] = [])
-    {
-        this.type = type;
-        this.name = name;
-        this.parameters = params;
-    }
-    /**
-     * 添加参数
-     * @param param 变量描述类
-     */
-    addParameter(param: TeaVar)
-    {
-        this.parameters.push(param);
-        if (this.functionContext)
-            this.functionContext.addVariable(param);
-    }
-    /**
-     * 设置函数覆盖的上下文
-     * @param context 上下文描述类
-     */
-    setFunctionContext(context: TeaContext)
-    {
-        this.functionContext = context;
-        teaGlobalContext.addContext(context);
-        this.parameters.forEach(param => context.addVariable(param));
-    }
-    toString()
-    {
-        return `${this.export == false ? "" : "Export"} Script ${this.name}(${this.parameters.map(param => param.toString()).join(", ")} ${type.name === "Void" ? "" : `, Return ${type.name}`})`;
-    }
 }
 
 // ---------------------------------------------------------------- 分析和封装方法

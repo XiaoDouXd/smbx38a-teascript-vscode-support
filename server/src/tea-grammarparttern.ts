@@ -9,11 +9,12 @@ import {
     createCompletionItemsForVar
 } from './tea-context';
 import { getObjectType } from './tea-matchfunctions';
-import { LanguageGrammar, GrammarPattern, getMatchedProps, includePattern } from './meta-grammar';
+import { LanguageGrammar, GrammarPatternDeclare, getMatchedProps, includePattern } from './meta-grammar';
 import { CompletionItemKind } from 'vscode-languageserver';
 
 /** tea 语言的语法模板 */
 const teaGrammarParttern: LanguageGrammar = {
+    explicitScopeExtreme: false,
     stringDelimiter: ["\""],
     pairMatch: [
         ["(", ")"],
@@ -24,7 +25,6 @@ const teaGrammarParttern: LanguageGrammar = {
     ],
     ignore: {
         patterns: [
-            "/' * '/",
             "'*"
         ]
     },
@@ -36,7 +36,8 @@ const teaGrammarParttern: LanguageGrammar = {
             name: "Global",
             id: "global",
             patterns: [
-
+                "var-declare",
+                "func-definition"
             ]
         }
     ],
@@ -49,8 +50,8 @@ const teaGrammarParttern: LanguageGrammar = {
                 "Dim <name> [= <expression>] [, <name> [= <expression>] ...] As <type>"
             ],
             dictionary: {
-                "type": GrammarPattern.Identifier,
-                "name": GrammarPattern.Identifier,
+                "type": GrammarPatternDeclare.Identifier,
+                "name": GrammarPatternDeclare.Identifier,
             },
             onMatched: (match) =>
             {
@@ -67,6 +68,7 @@ const teaGrammarParttern: LanguageGrammar = {
                 "<expr-unit> [<operator> <expr-unit> ...]"
             ],
             strict: true,
+            crossLine: true,
             dictionary: {
                 "expr-unit": {
                     name: "Expression Unit with Operator",
@@ -75,6 +77,7 @@ const teaGrammarParttern: LanguageGrammar = {
                         "unit": {
                             name: "Expression Unit",
                             patterns: [
+                                "<func-call-val>",
                                 "<func-call>",
                                 "<identifier>",
                                 "<number>",
@@ -153,8 +156,8 @@ const teaGrammarParttern: LanguageGrammar = {
             name: "Params Declare",
             patterns: ["<name> As <type> [= <expression>]"],
             dictionary: {
-                "type": GrammarPattern.Identifier,
-                "name": GrammarPattern.Identifier,
+                "type": GrammarPatternDeclare.Identifier,
+                "name": GrammarPatternDeclare.Identifier,
             },
             onMatched: (match)=>{
                 const type = getMatchedProps(match, "type");
@@ -168,8 +171,8 @@ const teaGrammarParttern: LanguageGrammar = {
             name: "Function Definition",
             patterns: ["[Export] Script <name>([<func-params-declare>][,<func-params-declare>...][,Return <type>]){block} End Script"],
             dictionary: {
-                "type": GrammarPattern.Identifier,
-                "name": GrammarPattern.Identifier,
+                "type": GrammarPatternDeclare.Identifier,
+                "name": GrammarPatternDeclare.Identifier,
             },
             crossLine: true,
             onMatched: (match)=>{
@@ -188,30 +191,53 @@ const teaGrammarParttern: LanguageGrammar = {
                 return [];
             }
         },
+        // 对象调用
+        "object": {
+            name: "Objcet",
+            crossLine: true,
+            patterns: [
+                "<func-call-val>", "identifier"
+            ],
+            onMatched: (match) => {
+                // match
+            }
+        },
+        // goto 目标声明
+        "goto-flag": {
+            name: "GoTo Flag",
+            patterns: [ "<name>:" ],
+            dictionary: {
+                "name": GrammarPatternDeclare.Identifier
+            },
+            onMatched: (match) => {
+                // match
+            }
+        },
 
         // ------------------------------------------- 调用定义
         // Call 修饰的函数调用
         "func-call-prefix": {
             name: "Function Call Prefix",
+            crossLine: true,
             patterns: ["Call <identifier>(<expression> [, <expression> ...])"]
         },
         // 变量函数调用
         "func-call-val": {
             name: "Function Call Var",
-            patterns: ["<name>(<var-name>)"],
+            patterns: ["<name>(<expression>)"],
             dictionary: {
                 "name": {
                     patterns: [
                         "Array", "Val", "GVal"
                     ],
                 },
-                "var-name": GrammarPattern.Identifier
             }
         },
         // 函数调用
         "func-call": {
             name: "Function Call",
             patterns: ["<name>(<expression> [, <expression> ...])"],
+            crossLine: true,
             dictionary: {
                 "name": {
                     patterns: [
@@ -220,13 +246,25 @@ const teaGrammarParttern: LanguageGrammar = {
                     ignore: /(Array|Val|GVal)/g
                 }
             }
+        },
+        // goto 语句
+        "goto-call": {
+            name: "GoTo Call",
+            patterns: ["GoTo <name>"],
+            dictionary: {
+                name: GrammarPatternDeclare.Identifier
+            },
+            onMatched: (match) => {
+                // match
+            }
         }
     },
     scopeRepository: {
         "block": {
-            name : "block",
-            begin: "",
-            end: "",
+            name : "Block",
+            begin: [""],
+            end: ["End If", "ElseIf", "Else", "End Script", "End With", "Next", "Loop", "End Select"],
+            
             patterns: [
                 includePattern("varDeclare"),
                 {
@@ -237,14 +275,29 @@ const teaGrammarParttern: LanguageGrammar = {
                 {
                     name: "If",
                     id:"if-structure",
-                    patterns: ["If [<expression>] Then {block} [<elseif-block> ...] [<else-block>] End If"]
+                    patterns: ["If <expression> Then {block} [ElseIf <expression> Then {block} ...] [Else {block}] End If"]
                 },
                 {
                     name: "For Loop",
-                    id:"for-structure",
-                    patterns: ["For <val> {block} next"]
+                    id:"for-loop",
+                    patterns: ["For <func-call-val>=<expression> To <expression> [Step <number>] {block} next"],
+                },
+                {
+                    name: "Do While Loop",
+                    id: "dow-loop",
+                    patterns: ["Do /(While|Until)/ {block} Loop"]
+                },
+                {
+                    name: "Do Loop While",
+                    id: "do-loop",
+                    patterns: ["Do {block} Loop /(While|Until)/"]
+                },
+                {
+                    name: "With",
+                    id: "with-structure",
+                    patterns: ["With <func-call-val> {block} End With"]
                 }
-            ]
+            ],
         }
     }
 };

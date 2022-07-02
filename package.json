@@ -31,7 +31,7 @@
             {
                 "language": "smbxtea",
                 "scopeName": "source.smt",
-                "path": "./syntaxes/vbs.tmLanguage"
+                "path": "./syntaxes/smbxtea.tmLanguage.json"
             }
         ],
         "snippets": [
@@ -66,8 +66,5 @@
         "mocha": "^10.0.0",
         "typescript": "^4.7.2"
     },
-    "dependencies": {
-        "linq": "^4.0.0",
-        "log4js": "^6.5.2"
-    }
+    "dependencies": {}
 }

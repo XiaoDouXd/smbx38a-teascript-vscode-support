@@ -2,14 +2,14 @@
 // 客户端初始化和设置
 // ================================================================
 
-import * as path from 'path';
-import { workspace, ExtensionContext } from 'vscode';
 import {
 	LanguageClient,
 	LanguageClientOptions,
 	ServerOptions,
 	TransportKind
 } from 'vscode-languageclient/node';
+import * as path from 'path';
+import { workspace, ExtensionContext } from 'vscode';
 
 // 声明语言客户端
 // 该变量会在 activate 函数中被实例化
