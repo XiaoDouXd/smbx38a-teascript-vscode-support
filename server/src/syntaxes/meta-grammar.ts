@@ -4,6 +4,7 @@
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Position, CompletionItem, Diagnostic } from 'vscode-languageserver';
+import { NoParamCallback } from 'fs';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const linq = require('linq');
@@ -150,17 +151,18 @@ class RegExpPattern extends PatternItem {
         // 通过该模板默认的正则表达式匹配
         const match = new MatchResult(doc, this);
 
+        const regMatch = this.regExp.exec(text);
+
         // 匹配排除模板
         if (this.ignore != null) {
             const test = this.ignore.exec(text);
-            if (test != null && test[0] == text) {
+            if (test != null && regMatch != null && test[0] == regMatch[0]) {
                 match.endOffset = startOffset;
                 match.matched = false;
                 return match;
             }
         }
 
-        const regMatch = this.regExp.exec(text);
         match.startOffset = startOffset;
         if (!regMatch || regMatch.index !== 0) {
             match.endOffset = startOffset;
@@ -202,7 +204,7 @@ class TextPattern extends RegExpPattern {
      * @param text 文本
      * @param ignoreCase 是否忽略大小写
      */
-    constructor(pattern: GrammarPatternDeclare, text: string, ignorable = false, ignoreCase = false) {
+    constructor(pattern: GrammarPatternDeclare, text: string, ignorable = false, ignoreCase = true) {
         // 匹配单词文本
         super(pattern, new RegExp(text.replace(/[|\\{}()[\]^$+*?.=:]/g, '\\$&'), ignoreCase ? "i" : ""), ignorable);
         this.text = text;
@@ -277,6 +279,16 @@ class OrderedPatternSet extends PatternItem {
         const match = new MatchResult(doc, this);
         match.startOffset = startOffset;
 
+        /** 递归寻找上一个匹配结果末尾有没有域 */
+        function forScope(ma: MatchResult): ScopeMatchResult {
+            if (ma.forScope())
+                return ma as ScopeMatchResult;
+            if (ma.children.length >= 1) {
+                return forScope(ma.children[ma.children.length - 1]);
+            }
+            return null;
+        }
+
         try {
             // 遍历每一个子模板
             for (let i = 0; i < this.subPatterns.length; i++) {
@@ -308,14 +320,12 @@ class OrderedPatternSet extends PatternItem {
 
                 // 若匹配上了部分关键字, 则后移开始指针
                 match.addChildren(subMatch);
-                // 若域端点是隐式的...且上一次匹配的是域, 则从域的端点开始继续匹配
-                if (subMatch.forScope()) {
-                    if (!subMatch.scope.grammar?.explicitScopeExtreme) {
-                        const ma = subMatch as ScopeMatchResult;
-                        if (ma != null)
-                            startOffset = ma.endMatch.startOffset;
-                        else
-                            startOffset = subMatch.endOffset;
+
+                // 若域端点是隐式的...上一次结尾处匹配的是域, 则这次从域的端点开始继续匹配
+                const scopeMa = forScope(subMatch);
+                if (scopeMa != null) {
+                    if (!scopeMa.scope.grammar?.explicitScopeExtreme) {
+                        startOffset = scopeMa.endMatch.startOffset;
                     }
                 }
                 // 否则显式域端点
@@ -573,6 +583,9 @@ class Grammar extends ScopePattern {
                     cleanSpace();
                 }
             }
+
+            if (!match.scope)
+                match.scope = new GlobalScopeDeclare(this.grammar, this.grammar.onMatchedInit);
             match.endOffset = end;
             match.matched = true;
 
@@ -636,6 +649,8 @@ class MatchResult {
     set pattern(value) { this._pattern = value; }
     /** 是否是域的匹配结果 */
     forScope(): boolean { return this._forScope; }
+    /** 转换为域的匹配结果 */
+    setForScope() { this._forScope = true; }
 
     /**
      * @param doc 基准文本段落
@@ -958,6 +973,23 @@ class GrammarScopeDeclare {
     /** 语法定义 */
     grammar?: LanguageGrammar;
 }
+/** 全局域声明 */
+class GlobalScopeDeclare extends GrammarScopeDeclare {
+
+    onPatternMatched: PatternMatchedCallback;
+
+    constructor(grammar: LanguageGrammar, onMatch: ScopeMatchedCallback) {
+        super();
+        this.begin = [""];
+        this.end = [""];
+
+        this.name = "GLOBAL";
+        this.grammar = grammar;
+        this.onMatched = (match) => {
+            onMatch(match);
+        };
+    }
+}
 /** 模板语法声明 */
 class GrammarPatternDeclare {
     /** 字符串标签 */
@@ -1016,7 +1048,7 @@ class LanguageGrammar {
     explicitScopeExtreme = false;
 
     // ---------------------------------------------
-    /** 语法模板 */
+    /** 全局的语法模板 */
     patterns?: GrammarPatternDeclare[];
     /** 名称 */
     name?: string;
@@ -1031,6 +1063,7 @@ class LanguageGrammar {
     /** 域声明 */
     scopeRepository?: ScopeDictionary;
 
+    onMatchedInit?: ScopeMatchedCallback;
     /** 补全时回调 */
     onCompletion?: DocumentCompletionCallback;
 }
@@ -1204,7 +1237,10 @@ function analysePatternItem(item: string, pattern: GrammarPatternDeclare): Patte
             }
             // 若当前字符是结束括号
             else if (isBracketEnd(item[i]))
-                throw new Error("Syntax error.");
+                throw new Error(
+                    "meta-grammar.analysePatternItem.error: 闭合括号找不到对应的开始括号, " +
+                    "涉及模板名: " + pattern?.name
+                );
 
             // 其它字符则直接存入单词
             else {
@@ -1251,7 +1287,7 @@ function analysePatternItem(item: string, pattern: GrammarPatternDeclare): Patte
     // 若括号没闭合, 报错
     else if (state === State.MatchBracket && bracketDepth > 0)
         throw new Error(
-            "meta-grammar.analysePatternItem.error: 模板括号位闭合, " +
+            "meta-grammar.analysePatternItem.error: 模板括号未闭合, " +
             "涉及模板名: " + pattern?.name
         );
 

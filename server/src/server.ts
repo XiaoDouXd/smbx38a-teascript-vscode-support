@@ -39,6 +39,8 @@ import {
     CompletionParams,
 } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
+import teaGrammarParttern from './syntaxes/tea-grammarparttern';
+import { matchGrammar, compileGrammar } from './syntaxes/meta-grammar';
 
 // ---------------------------------------------------------------- 初始化连接对象
 
@@ -50,6 +52,8 @@ const connection = createConnection(ProposedFeatures.all);
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 // 创建文档列表
 const documentList = new Map<string, TextDocument>();
+
+const compiledTeaGrammar = compileGrammar(teaGrammarParttern);
 
 // ---------------------------------------------------------------- 初始化事件响应
 
@@ -104,20 +108,22 @@ documents.onDidClose(e => {
     documentList.delete(e.document.uri);
 });
 
-// connection.onCompletion((docPos: CompletionParams): CompletionItem[] => {
-//     try {
-//         const startTime = new Date().getTime();
-//         connection.window.showInformationMessage('ASDFGHJKL');
-//         const match = matchGrammar(compiledTeaGrammar, documentList.get(docPos.textDocument.uri));
-//         const completions = match.requestCompletion(docPos.position);
-//         const endTime = new Date().getTime();
+connection.onCompletion((docPos: CompletionParams): CompletionItem[] => {
+    try {
 
-//         return completions;
-//     }
-//     catch (ex) {
-//         console.error(ex);
-//     }
-// });
+        const match = matchGrammar(compiledTeaGrammar, documentList.get(docPos.textDocument.uri));
+        const completions = match.requestCompletion(docPos.position);
+
+        completions.forEach((e) => {
+            console.log(`${e.label} ~ ${e.kind}`);
+        });
+
+        return completions;
+    }
+    catch (ex) {
+        console.error(ex);
+    }
+});
 
 // 悬停事件
 connection.onHover((params: HoverParams): Promise<Hover> => {

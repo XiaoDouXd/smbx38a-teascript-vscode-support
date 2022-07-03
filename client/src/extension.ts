@@ -3,46 +3,17 @@
 // ================================================================
 
 import {
-	LanguageClient,
-	LanguageClientOptions,
-	ServerOptions,
-	TransportKind
+    LanguageClient,
+    LanguageClientOptions,
+    ServerOptions,
+    TransportKind
 } from 'vscode-languageclient/node';
 import * as path from 'path';
 import { workspace, ExtensionContext } from 'vscode';
 
-// 调试语法检查器
-import { Position } from 'vscode-languageserver';
-import { TextDocument } from 'vscode-languageserver-textdocument';
-import teaGrammarParttern from './syntaxes/tea-grammarparttern';
-import { compileGrammar, matchGrammar } from './syntaxes/meta-grammar';
-
 // 声明语言客户端
 // 该变量会在 activate 函数中被实例化
 let client: LanguageClient;
-
-const teaGrammar = compileGrammar(teaGrammarParttern);
-const languageContent = `Dim a As Integer = 60
-Dim b As Integer
-
-Export Script Name()
-    Dim c As Integer = 0
-End Script
-
-If Val(a) ==5 Then
-    b = a + c
-End If`;
-const document = TextDocument.create("text", "smbxtea", 1.0, languageContent);
-
-// 测试用函数
-function clientAwake() {
-	// 
-	console.log("TeaGrammar.compileGrammar: " + teaGrammar.name);
-
-	const match = matchGrammar(teaGrammar, document);
-
-	console.log("Match: " + match);
-}
 
 // ---------------------------------------------------------------- 生命周期函数
 // LSP框架中的客户端做的事并不多
@@ -51,55 +22,53 @@ function clientAwake() {
 export function activate(context: ExtensionContext) {
 
 
-	// 启动测试
-	console.log("log: smbxtea extension activate!");
+    // 启动测试
+    console.log("log: smbxtea extension activate!");
 
-	// 调试设置
-	// --inspect=6009: runs the server in Node's Inspector mode so VS Code can attach to the server for debugging
-	const debugOptions = { execArgv: ['--nolazy', '--inspect=6009'] };
+    // 调试设置
+    // --inspect=6009: runs the server in Node's Inspector mode so VS Code can attach to the server for debugging
+    const debugOptions = { execArgv: ['--nolazy', '--inspect=6009'] };
 
-	// 服务端配置信息
-	// 对于 Node 形式的插件，只需要定义入口文件即可，vscode 会帮我们管理好进程的状态
-	const serverModule = context.asAbsolutePath(
-		path.join('server', 'out', 'server.js')
-	);
-	const serverOptions: ServerOptions = {
-		run: { module: serverModule, transport: TransportKind.ipc },
-		debug: {
-			module: serverModule,
-			transport: TransportKind.ipc,
-			options: debugOptions
-		}
-	};
+    // 服务端配置信息
+    // 对于 Node 形式的插件，只需要定义入口文件即可，vscode 会帮我们管理好进程的状态
+    const serverModule = context.asAbsolutePath(
+        path.join('server', 'out', 'server.js')
+    );
+    const serverOptions: ServerOptions = {
+        run: { module: serverModule, transport: TransportKind.ipc },
+        debug: {
+            module: serverModule,
+            transport: TransportKind.ipc,
+            options: debugOptions
+        }
+    };
 
-	// 一些客户端设置
-	const clientOptions: LanguageClientOptions = {
-		// 定义插件在什么时候生效
-		documentSelector: [{ scheme: 'file', language: 'smbxtea' }],
-		synchronize: {
-			// Notify the server about file changes to '.clientrc files contained in the workspace
-			fileEvents: workspace.createFileSystemWatcher('**/.clientrc')
-		}
-	};
+    // 一些客户端设置
+    const clientOptions: LanguageClientOptions = {
+        // 定义插件在什么时候生效
+        documentSelector: [{ scheme: 'file', language: 'smbxtea' }],
+        synchronize: {
+            // Notify the server about file changes to '.clientrc files contained in the workspace
+            fileEvents: workspace.createFileSystemWatcher('**/.clientrc')
+        }
+    };
 
-	// 创建客户端实例
-	client = new LanguageClient(
-		'smbxteaLanguageServer',
-		'SMBXTea Language Server',
-		serverOptions,
-		clientOptions
-	);
+    // 创建客户端实例
+    client = new LanguageClient(
+        'smbxteaLanguageServer',
+        'SMBXTea Language Server',
+        serverOptions,
+        clientOptions
+    );
 
-	// 开启语言客户端
-	// 该方法运行时会直接开启服务端
-	client.start();
-
-	clientAwake();
+    // 开启语言客户端
+    // 该方法运行时会直接开启服务端
+    client.start();
 }
 
 export function deactivate(): Thenable<void> | undefined {
-	if (!client) {
-		return undefined;
-	}
-	return client.stop();
+    if (!client) {
+        return undefined;
+    }
+    return client.stop();
 }

@@ -4,6 +4,7 @@
 
 import { type } from 'os';
 import { CompletionItem, CompletionItemKind } from 'vscode-languageserver';
+import { matchGrammar, MatchResult } from './meta-grammar';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const linq = require('linq');
@@ -200,7 +201,8 @@ class TeaContext {
      * @returns 类型描述类
      */
     getType(name: string): TeaType {
-        const reg = /(Integer|Double|Byte|Long)/;
+        const reg = new RegExp(/(Integer|Double|Byte|Long)/, "i");
+
         const match = reg.exec(name);
         if (match) {
             return new TeaType(match[1]);
