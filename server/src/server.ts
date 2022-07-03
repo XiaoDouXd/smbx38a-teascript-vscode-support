@@ -15,7 +15,6 @@ configure({
     categories: { default: { appenders: ["smbx_tea"], level: "debug" } }
 });
 const logger = getLogger("smbx_tea");
-
 import {
     createConnection,
     TextDocuments,
@@ -39,10 +38,7 @@ import {
     DocumentHighlightKind,
     CompletionParams,
 } from 'vscode-languageserver/node';
-import { compileGrammar, matchGrammar } from './syntaxes/meta-grammar';
-import teaGrammarParttern from './syntaxes/tea-grammarparttern';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { treeBuilder } from './syntaxes/tea-treebuilder';
 
 // ---------------------------------------------------------------- 初始化连接对象
 
@@ -52,8 +48,6 @@ import { treeBuilder } from './syntaxes/tea-treebuilder';
 const connection = createConnection(ProposedFeatures.all);
 // 创建文档集合对象，用于映射到实际文档
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
-// 整理语法
-const compiledTeaGrammar = compileGrammar(teaGrammarParttern);
 // 创建文档列表
 const documentList = new Map<string, TextDocument>();
 
@@ -110,20 +104,20 @@ documents.onDidClose(e => {
     documentList.delete(e.document.uri);
 });
 
-connection.onCompletion((docPos: CompletionParams): CompletionItem[] => {
-    try {
-        const startTime = new Date().getTime();
-        connection.window.showInformationMessage('ASDFGHJKL');
-        const match = matchGrammar(compiledTeaGrammar, documentList.get(docPos.textDocument.uri));
-        const completions = match.requestCompletion(docPos.position);
-        const endTime = new Date().getTime();
+// connection.onCompletion((docPos: CompletionParams): CompletionItem[] => {
+//     try {
+//         const startTime = new Date().getTime();
+//         connection.window.showInformationMessage('ASDFGHJKL');
+//         const match = matchGrammar(compiledTeaGrammar, documentList.get(docPos.textDocument.uri));
+//         const completions = match.requestCompletion(docPos.position);
+//         const endTime = new Date().getTime();
 
-        return completions;
-    }
-    catch (ex) {
-        console.error(ex);
-    }
-});
+//         return completions;
+//     }
+//     catch (ex) {
+//         console.error(ex);
+//     }
+// });
 
 // 悬停事件
 connection.onHover((params: HoverParams): Promise<Hover> => {

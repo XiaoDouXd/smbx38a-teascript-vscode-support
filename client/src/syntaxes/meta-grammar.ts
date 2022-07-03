@@ -1,8 +1,6 @@
 // ================================================================
 // 语法分析模板构建相关类的设计
 // ================================================================
-import { getLogger } from "log4js";
-const logger = getLogger("smbx_tea");
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Position, CompletionItem, Diagnostic } from 'vscode-languageserver';
@@ -153,10 +151,13 @@ class RegExpPattern extends PatternItem {
         const match = new MatchResult(doc, this);
 
         // 匹配排除模板
-        if (this.ignore != null && this.ignore.exec(text)[0] == text) {
-            match.endOffset = startOffset;
-            match.matched = false;
-            return match;
+        if (this.ignore != null) {
+            const test = this.ignore.exec(text);
+            if (test != null && test[0] == text) {
+                match.endOffset = startOffset;
+                match.matched = false;
+                return match;
+            }
         }
 
         const regMatch = this.regExp.exec(text);
@@ -308,8 +309,15 @@ class OrderedPatternSet extends PatternItem {
                 // 若匹配上了部分关键字, 则后移开始指针
                 match.addChildren(subMatch);
                 // 若域端点是隐式的...且上一次匹配的是域, 则从域的端点开始继续匹配
-                if (subMatch.forScope && !subMatch.scope.grammar?.explicitScopeExtreme)
-                    startOffset = subMatch.children[subMatch.children.length - 1].startOffset;
+                if (subMatch.forScope()) {
+                    if (!subMatch.scope.grammar?.explicitScopeExtreme) {
+                        const ma = subMatch as ScopeMatchResult;
+                        if (ma != null)
+                            startOffset = ma.endMatch.startOffset;
+                        else
+                            startOffset = subMatch.endOffset;
+                    }
+                }
                 // 否则显式域端点
                 else
                     startOffset = subMatch.endOffset;
@@ -407,44 +415,59 @@ class ScopePattern extends OrderedPatternSet {
             cleanSpace();
 
             // 匹配第一个模板, 第一个开始模板, 若没有显式开始则不管
-            if (!this.scope.grammar.explicitScopeExtreme) {
-                const subMatch = this.subPatterns[0].match(doc, startOffset);
-                match.beginMatch = subMatch;
-                match.endOffset = startOffset = subMatch.endOffset;
-                if (!subMatch.matched) {
-                    match.matched = false;
-                    return match;
-                }
-                else
-                    cleanSpace();
+            const subMatch = this.subPatterns[0].match(doc, startOffset);
+            match.beginMatch = subMatch;
+            match.endOffset = startOffset = subMatch.endOffset;
+            if (!subMatch.matched) {
+                match.matched = false;
+                return match;
             }
+            else
+                cleanSpace();
 
             let hasMatched = false;
+            // 没匹配上的子模板
             let failedMatches: MatchResult[] = [];
 
             // 对每个子模板进行匹配
             for (let i = 1; i < this.subPatterns.length; i++) {
+                // 子模板匹配结果
                 const subMatch = this.subPatterns[i].match(doc, startOffset);
+
+                // 若该子模版没匹配
                 if (!subMatch.matched) {
+                    // 放到失败匹配模板中
                     failedMatches.push(subMatch);
+                    // 若还有别的模板则继续尝试匹配
                     if (i < this.subPatterns.length - 1)
                         continue;
                 }
+                // 若该子模板匹配了
                 else {
+                    // 清空失败的匹配模板
                     failedMatches = [];
+                    // 若该子模板是最后一个匹配模板
                     if (i === this.subPatterns.length - 1) {
+                        // 记下来并退出匹配
                         match.endMatch = subMatch;
                         break;
                     }
+                    // 记下子匹配结果
                     match.addChildren(subMatch);
+                    // 记下尾指针
                     match.endOffset = startOffset = subMatch.endOffset;
+                    // 已经有匹配了
                     hasMatched = true;
 
+                    // 跳过空格
                     cleanSpace();
                 }
 
+                // 若接下来这段完全没有模板能匹配上
                 if (!hasMatched) {
+                    // 新建未匹配结果
                     const unMatched = new UnMatchedText(doc, this.scope, failedMatches);
+                    // 清空失败匹配
                     failedMatches = [];
                     unMatched.startOffset = startOffset;
                     match.addChildren(unMatched);
@@ -464,8 +487,11 @@ class ScopePattern extends OrderedPatternSet {
                         startOffset = linq.from(unMatched.allMatches).max((match: MatchResult) => match.endOffset);
                         unMatched.endOffset = startOffset;
                     }
+
+                    // 跳过空格
                     cleanSpace();
                 }
+
                 i = 0;
                 hasMatched = false;
             }
@@ -497,60 +523,66 @@ class Grammar extends ScopePattern {
         this.grammar = grammar;
     }
     match(doc: TextDocument, startOffset = 0): GrammarMatchResult {
-        // 清除前面的空格
+
         function cleanSpace() {
             const skip = EmptyPattern.skipEmpty(doc, startOffset, true);
             if (skip)
                 startOffset += skip[0].length;
         }
 
-        // 新建匹配结果
-        const match = new GrammarMatchResult(doc, this);
-        // 定位尾部
-        const end = doc.getText().length;
-        match.startOffset = 0;
-        while (startOffset != end) {
-            let hasMatched = false;
-            let failedMathes: MatchResult[] = [];
-            for (let i = 0; i < this.subPatterns.length; i++) {
-                const subMatch = this.subPatterns[i].match(doc, startOffset);
-                if (!subMatch.matched) {
-                    failedMathes.push(subMatch);
-                    continue;
-                }
-                failedMathes = [];
-                hasMatched = true;
-                match.addChildren(subMatch);
-                match.endOffset = startOffset = subMatch.endOffset;
-                cleanSpace();
-                break;
-            }
-
-            if (!hasMatched) {
-                const unMatched = new UnMatchedText(doc, this.scope, failedMathes);
-                failedMathes = [];
-                unMatched.startOffset = startOffset;
-                match.addChildren(unMatched);
-
-                const pos = doc.positionAt(startOffset);
-                pos.line++;
-                pos.character = 0;
-                startOffset = doc.offsetAt(pos);
-                unMatched.endOffset = startOffset - 1;
-
-                const pos2 = doc.positionAt(startOffset);
-                if (pos2.line !== pos.line) {
+        try {
+            // 清除前面的空格
+            // 新建匹配结果
+            const match = new GrammarMatchResult(doc, this);
+            // 定位尾部
+            const end = doc.getText().length;
+            match.startOffset = 0;
+            while (startOffset != end) {
+                let hasMatched = false;
+                let failedMathes: MatchResult[] = [];
+                for (let i = 0; i < this.subPatterns.length; i++) {
+                    const subMatch = this.subPatterns[i].match(doc, startOffset);
+                    if (!subMatch.matched) {
+                        failedMathes.push(subMatch);
+                        continue;
+                    }
+                    failedMathes = [];
+                    hasMatched = true;
+                    match.addChildren(subMatch);
+                    match.endOffset = startOffset = subMatch.endOffset;
+                    cleanSpace();
                     break;
                 }
-                cleanSpace();
+
+                if (!hasMatched) {
+                    const unMatched = new UnMatchedText(doc, this.scope, failedMathes);
+                    failedMathes = [];
+                    unMatched.startOffset = startOffset;
+                    match.addChildren(unMatched);
+
+                    const pos = doc.positionAt(startOffset);
+                    pos.line++;
+                    pos.character = 0;
+                    startOffset = doc.offsetAt(pos);
+                    unMatched.endOffset = startOffset - 1;
+
+                    const pos2 = doc.positionAt(startOffset);
+                    if (pos2.line !== pos.line) {
+                        break;
+                    }
+                    cleanSpace();
+                }
             }
+            match.endOffset = end;
+            match.matched = true;
+
+            match.processSubMatches();
+
+            return match;
         }
-        match.endOffset = end;
-        match.matched = true;
-
-        match.processSubMatches();
-
-        return match;
+        catch (ex) {
+            console.log(ex);
+        }
     }
 }
 

@@ -3,7 +3,7 @@
     "editor.defaultFormatter": "vscode.typescript-language-features"
   },
   "[javascript]": {
-    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+    "editor.defaultFormatter": "vscode.typescript-language-features"
   },
   "editor.formatOnSave": true,
   "eslint.nodePath": "./node_modules",

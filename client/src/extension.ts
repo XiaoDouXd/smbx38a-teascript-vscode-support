@@ -11,9 +11,38 @@ import {
 import * as path from 'path';
 import { workspace, ExtensionContext } from 'vscode';
 
+// 调试语法检查器
+import { Position } from 'vscode-languageserver';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+import teaGrammarParttern from './syntaxes/tea-grammarparttern';
+import { compileGrammar, matchGrammar } from './syntaxes/meta-grammar';
+
 // 声明语言客户端
 // 该变量会在 activate 函数中被实例化
 let client: LanguageClient;
+
+const teaGrammar = compileGrammar(teaGrammarParttern);
+const languageContent = `Dim a As Integer = 60
+Dim b As Integer
+
+Export Script Name()
+    Dim c As Integer = 0
+End Script
+
+If Val(a) ==5 Then
+    b = a + c
+End If`;
+const document = TextDocument.create("text", "smbxtea", 1.0, languageContent);
+
+// 测试用函数
+function clientAwake() {
+	// 
+	console.log("TeaGrammar.compileGrammar: " + teaGrammar.name);
+
+	const match = matchGrammar(teaGrammar, document);
+
+	console.log("Match: " + match);
+}
 
 // ---------------------------------------------------------------- 生命周期函数
 // LSP框架中的客户端做的事并不多
@@ -21,9 +50,10 @@ let client: LanguageClient;
 // 大部分的内容还是要在服务端书写
 export function activate(context: ExtensionContext) {
 
+
 	// 启动测试
 	console.log("log: smbxtea extension activate!");
-	
+
 	// 调试设置
 	// --inspect=6009: runs the server in Node's Inspector mode so VS Code can attach to the server for debugging
 	const debugOptions = { execArgv: ['--nolazy', '--inspect=6009'] };
@@ -63,6 +93,8 @@ export function activate(context: ExtensionContext) {
 	// 开启语言客户端
 	// 该方法运行时会直接开启服务端
 	client.start();
+
+	clientAwake();
 }
 
 export function deactivate(): Thenable<void> | undefined {

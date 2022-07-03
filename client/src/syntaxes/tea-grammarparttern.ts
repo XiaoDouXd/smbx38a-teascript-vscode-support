@@ -60,7 +60,7 @@ const teaGrammarParttern: LanguageGrammar = {
                 const type = match.getMatch("type")[0].text;
                 const name = match.getMatch("name")[0].text;
                 const context = match.matchedScope.state as TeaContext;
-                context.addVariable(new TeaVar(context.getType(type), name));
+                // context.addVariable(new TeaVar(context.getType(type), name));
             },
         },
         // 表达式定义
@@ -157,14 +157,14 @@ const teaGrammarParttern: LanguageGrammar = {
             onMatched: (match) => {
                 const type = getMatchedProps(match, "type");
                 const name = getMatchedProps(match, "name");
-                const func = match.matchedPattern.state as TeaFunc;
-                func.addParameter(new TeaVar(func.functionContext.getType(type), name));
+                // const func = match.matchedPattern.state as TeaFunc;
+                // func.addParameter(new TeaVar(func.functionContext.getType(type), name));
             }
         },
         // 函数体定义
         "func-definition": {
             name: "Function Definition",
-            patterns: ["[Export] Script <name>([<func-params-declare>][,<func-params-declare>...][,Return <type>]){block} End Script"],
+            patterns: ["[Export] Script <name>([<func-params-declare>][,<func-params-declare>...][,Return <type>]) {block} End Script"],
             dictionary: {
                 "type": GrammarPatternDeclare.Identifier,
                 "name": GrammarPatternDeclare.Identifier,
@@ -174,9 +174,9 @@ const teaGrammarParttern: LanguageGrammar = {
                 const type = getMatchedProps(match, "type");
                 const name = getMatchedProps(match, "name");
                 const context = match.matchedScope.state as TeaGlobalContext;
-                const func = new TeaFunc(context.getType(type), name);
-                context.addFunction(func);
-                match.state = func;
+                // const func = new TeaFunc(context.getType(type), name);
+                // context.addFunction(func);
+                // match.state = func;
             },
             onCompletion: (match) => {
                 if (match.patternName === "type") {
@@ -260,7 +260,7 @@ const teaGrammarParttern: LanguageGrammar = {
             end: ["End If", "ElseIf", "Else", "End Script", "End With", "Next", "Loop", "End Select"],
 
             patterns: [
-                includePattern("varDeclare"),
+                includePattern("var-declare"),
                 {
                     name: "Statement",
                     id: "statement",
