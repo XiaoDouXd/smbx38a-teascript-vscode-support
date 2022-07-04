@@ -3,33 +3,76 @@
         // symbol used for single line comment. Remove this entry if your language does not support line comments
         "lineComment": "'",
         // symbols used for start and end a block comment. Remove this entry if your language does not support block comments
-        "blockComment": [ "/'", "'/" ]
+        "blockComment": [
+            "/'",
+            "'/"
+        ]
     },
     // symbols used as brackets
     "brackets": [
-        ["[", "]"],
-        ["(", ")"]
+        [
+            "[",
+            "]"
+        ],
+        [
+            "(",
+            ")"
+        ]
     ],
     // symbols that are auto closed when typing
     "autoClosingPairs": [
-        ["[", "]"],
-        ["(", ")"],
-        ["\"", "\""],
-        ["'", "'"],
-        ["Sub","End Sub"]
+        [
+            "[",
+            "]"
+        ],
+        [
+            "(",
+            ")"
+        ],
+        [
+            "\"",
+            "\""
+        ],
+        [
+            "'",
+            "'"
+        ],
+        [
+            "Sub",
+            "End Sub"
+        ]
     ],
     // symbols that can be used to surround a selection
     "surroundingPairs": [
-        ["{", "}"],
-        ["[", "]"],
-        ["(", ")"],
-        ["\"", "\""],
-        ["'", "'"]
+        [
+            "{",
+            "}"
+        ],
+        [
+            "[",
+            "]"
+        ],
+        [
+            "(",
+            ")"
+        ],
+        [
+            "\"",
+            "\""
+        ],
+        [
+            "'",
+            "'"
+        ]
     ],
     "folding": {
         "markers": {
-            "start": "(\\bExport\\s+)?(\\bScript\\s+)([_a-zA-Z][_a-zA-Z0-9]*)(\\([\\s\\S]*\\))",
-            "end": "\\bEnd\\s+Script\\b"
+            "start": "\\b(((E|e)xport\\s+)?((S|s)cript\\s+)([_a-zA-Z][_a-zA-Z0-9]*)(\\([\\s\\S]*\\))) | ((I|i)f\\s+[.]*) | ((w|W)ith\\s+[.]*) | ((D|d)o\\s+[.]*) | ((F|f)or\\s+[.]*) )\\b",
+            "end": "\\b(((E|e)nd\\s+(S|s)cript) | ((e|E)nd\\s+(I|i)f) | ((E|e)nd\\s+(W|w)ith) | ((L|l)oop\\s+[.]*) | ((N|n)ext) )\\b"
         }
+    },
+    "indentationRules": {
+        "increaseIndentPattern": "\\b(((E|e)xport\\s+)?((S|s)cript\\s+)([_a-zA-Z][_a-zA-Z0-9]*)(\\([\\s\\S]*\\))) | ((I|i)f\\s+[.]*) | ((w|W)ith\\s+[.]*) | ((D|d)o\\s+[.]*) | ((F|f)or\\s+[.]*) )\\b",
+        "decreaseIndentPattern": "\\b(((E|e)nd\\s+(S|s)cript) | ((e|E)nd\\s+(I|i)f) | ((E|e)nd\\s+(W|w)ith) | ((L|l)oop\\s+[.]*) | ((N|n)ext) )\\b"
     }
 }

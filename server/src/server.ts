@@ -37,12 +37,13 @@ import {
     DocumentHighlight,
     DocumentHighlightKind,
     CompletionParams,
+    ResourceOperationKind,
 } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import teaGrammarParttern from './syntaxes/tea-grammarparttern';
 import teaBuildinContext from './syntaxes/tea-buildincontext';
 import { TeaGlobalContext } from './syntaxes/tea-context';
-import { matchGrammar, compileGrammar, GrammarMatchResult } from './syntaxes/meta-grammar';
+import { matchGrammar, compileGrammar, GrammarMatchResult, MatchResult } from './syntaxes/meta-grammar';
 
 // ---------------------------------------------------------------- 初始化连接对象
 
@@ -55,9 +56,16 @@ const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 // 创建文档列表
 const documentList = new Map<string, TextDocument>();
 
-// 编译语法模板
+// 编译和初始化语法模板
 const compiledTeaGrammar = compileGrammar(teaGrammarParttern);
 TeaGlobalContext.loadBuildinContext(teaBuildinContext);
+const documentMatch = new Map<string, GrammarMatchResult>();
+function updateMatch(uri: string): GrammarMatchResult {
+    if (!documentList.has(uri))
+        return null;
+    documentMatch.set(uri, matchGrammar(compiledTeaGrammar, documentList.get(uri)));
+    return documentMatch.get(uri);
+}
 
 // ---------------------------------------------------------------- 初始化事件响应
 
@@ -73,12 +81,14 @@ connection.onInitialize((params: InitializeParams) => {
     const result: InitializeResult = {
         capabilities: {
             // 增量处理
-            textDocumentSync: TextDocumentSyncKind.Incremental,
+            // textDocumentSync: TextDocumentSyncKind.Incremental,
+
             // 代码补全
             completionProvider: {
                 // resolveProvider: true,
                 triggerCharacters: [".", " ", "="]
             },
+
             // // 悬停提示
             // hoverProvider: true,
             // // 签名提示
@@ -98,32 +108,23 @@ connection.onInitialize((params: InitializeParams) => {
 // 完成握手后 客户端会返回 initialized notification 事件
 // 可以使用下面方法设置接收的响应
 connection.onInitialized(() => {
-    console.log("SMBX tea intellisense start.");
     connection.window.showInformationMessage('SMBX tea intellisense start.');
 });
 
 // -------------------------------------------------------------- 设置文档事件响应
-
 documents.onDidOpen(e => {
     documentList.set(e.document.uri, e.document);
+    documentMatch.set(e.document.uri, matchGrammar(compiledTeaGrammar, e.document));
 });
 
 documents.onDidClose(e => {
     documentList.delete(e.document.uri);
+    documentMatch.delete(e.document.uri);
 });
-
-let match: GrammarMatchResult;
 
 connection.onCompletion((docPos: CompletionParams): CompletionItem[] => {
     try {
-        match = matchGrammar(compiledTeaGrammar, documentList.get(docPos.textDocument.uri));
-        const completions = match.requestCompletion(docPos.position);
-
-        completions.forEach((c) => {
-            console.log(`${c.label} ~ ${c.kind}`);
-        });
-
-        return completions;
+        return updateMatch(docPos.textDocument.uri).requestCompletion(docPos.position);
     }
     catch (ex) {
         console.error(ex);

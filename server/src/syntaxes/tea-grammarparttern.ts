@@ -7,11 +7,104 @@ import {
     teaBuildinTypesCompletion,
     createCompletionItemsForFunc,
     createCompletionItemsForVar,
-    TeaGlobalContext
+    TeaGlobalContext,
+    TeaType,
+    teaBuildinKeywordCompletion
 } from './tea-context';
-import { getObjectType } from './tea-matchfunctions';
-import { LanguageGrammar, GrammarPatternDeclare, getMatchedProps, includePattern } from './meta-grammar';
+import { LanguageGrammar, GrammarPatternDeclare, getMatchedProps, includePattern, MatchResult, PatternMatchResult } from './meta-grammar';
 import { CompletionItemKind } from 'vscode-languageserver';
+
+// ----------------------------------------------------------------
+
+/** 获得对象类型 */
+function getObjectType(match: MatchResult, context: TeaContext): TeaType {
+    const reg = /([_a-zA-Z][_a-zA-Z0-9]*)(\([.]*\))*/;
+    let name = "";
+
+    if (match.children.length === 2) {
+        if (match.children[0].text === ".") {
+            const prevIdx = match.parent.children.indexOf(match) - 1;
+            const prevMatch = match.parent.children[prevIdx];
+            const t = getObjectType(prevMatch, context);
+            const name = match.children[1].text;
+            const result = reg.exec(name);
+            return t.getMember(result[1]).type;
+        }
+        name = match.children[1].text;
+    }
+    else {
+        name = match.text;
+    }
+    const result = reg.exec(name);
+
+    if (!result)
+        return null;
+
+    if (result.length <= 2) {
+        const v = context.getVariable(result[1]);
+        return v ? v.type : null;
+    }
+    else {
+        const f = context.getFunc(result[1]);
+        return f ? f.type : null;
+    }
+}
+/** 表达式匹配回调 */
+function onExpressionMatch(match: MatchResult) {
+    const context = match.matchedScope.state as TeaContext;
+    if (match.patternName === "expr-unit") {
+
+        if (match.text === ".") {
+            return context.getAllVariables().map(v => {
+                if (v.dotFlag)
+                    return {
+                        label: v.name,
+                        kind: CompletionItemKind.Variable,
+                        detail: v.toString()
+                    };
+            });
+        }
+
+        return createCompletionItemsForVar(context.getAllVariables())
+            .concat(createCompletionItemsForFunc(context.global.functions));
+    }
+    else if (match.patternName === "operator") {
+        if (match.text === ".") {
+            const context = match.matchedScope.state as TeaContext;
+            const prevIdx = match.parent.parent.children.indexOf(match.parent) - 1;
+            const prevMatch = match.parent.parent.children[prevIdx];
+            const type = getObjectType(prevMatch, context);
+
+            if (!type)
+                return [];
+
+            if (type.orderedMenber) {
+                // 排序基数
+                const base = 1000;
+                return type.members.map((member, idx) => {
+                    return {
+                        label: member.name,
+                        detail: member.toString(),
+                        sortText: (base + idx).toString(),
+                        kind: CompletionItemKind.Field
+                    };
+                });
+            }
+            else {
+                return type.members.map((member) => {
+                    return {
+                        label: member.name,
+                        detail: member.toString(),
+                        kind: CompletionItemKind.Field
+                    };
+                });
+            }
+        }
+    }
+    return [];
+}
+
+// ----------------------------------------------------------------
 
 /** tea 语言的语法模板 */
 const teaGrammarParttern: LanguageGrammar = {
@@ -57,7 +150,11 @@ const teaGrammarParttern: LanguageGrammar = {
                 "<expression>",
                 "<func-call-prefix>",
                 "<goto-call>",
-            ]
+            ],
+            onCompletion: (match) => {
+                return teaBuildinTypesCompletion
+                    .concat(teaBuildinKeywordCompletion);
+            },
         }
     ],
     patternRepository: {
@@ -121,43 +218,7 @@ const teaGrammarParttern: LanguageGrammar = {
                     ]
                 }
             },
-            onCompletion: (match) => {
-                const context = match.matchedScope.state as TeaContext;
-                if (match.patternName === "expr-unit") {
-                    return createCompletionItemsForVar(context.getAllVariables())
-                        .concat(createCompletionItemsForFunc(context.global.functions));
-                }
-                else if (match.patternName === "operator") {
-                    if (match.text === ".") {
-                        const context = match.matchedScope.state as TeaContext;
-                        const prevIdx = match.parent.parent.children.indexOf(match.parent) - 1;
-                        const prevMatch = match.parent.parent.children[prevIdx];
-                        const type = getObjectType(prevMatch, context);
-                        if (type.orderedMenber) {
-                            // 排序基数
-                            const base = 1000;
-                            return type.members.map((member, idx) => {
-                                return {
-                                    label: member.name,
-                                    detail: member.toString(),
-                                    sortText: (base + idx).toString(),
-                                    kind: CompletionItemKind.Field
-                                };
-                            });
-                        }
-                        else {
-                            return type.members.map((member) => {
-                                return {
-                                    label: member.name,
-                                    detail: member.toString(),
-                                    kind: CompletionItemKind.Field
-                                };
-                            });
-                        }
-                    }
-                }
-                return [];
-            },
+            onCompletion: onExpressionMatch
         },
         "expression-unstrict": {
             name: "Expression",
@@ -200,43 +261,7 @@ const teaGrammarParttern: LanguageGrammar = {
                     ]
                 }
             },
-            onCompletion: (match) => {
-                const context = match.matchedScope.state as TeaContext;
-                if (match.patternName === "expr-unit") {
-                    return createCompletionItemsForVar(context.getAllVariables())
-                        .concat(createCompletionItemsForFunc(context.global.functions));
-                }
-                else if (match.patternName === "operator") {
-                    if (match.text === ".") {
-                        const context = match.matchedScope.state as TeaContext;
-                        const prevIdx = match.parent.parent.children.indexOf(match.parent) - 1;
-                        const prevMatch = match.parent.parent.children[prevIdx];
-                        const type = getObjectType(prevMatch, context);
-                        if (type.orderedMenber) {
-                            // 排序基数
-                            const base = 1000;
-                            return type.members.map((member, idx) => {
-                                return {
-                                    label: member.name,
-                                    detail: member.toString(),
-                                    sortText: (base + idx).toString(),
-                                    kind: CompletionItemKind.Field
-                                };
-                            });
-                        }
-                        else {
-                            return type.members.map((member) => {
-                                return {
-                                    label: member.name,
-                                    detail: member.toString(),
-                                    kind: CompletionItemKind.Field
-                                };
-                            });
-                        }
-                    }
-                }
-                return [];
-            },
+            onCompletion: onExpressionMatch
         },
         // 括号表达式定义
         "bracket": {
@@ -270,9 +295,9 @@ const teaGrammarParttern: LanguageGrammar = {
             onMatched: (match) => {
                 const type = getMatchedProps(match, "type");
                 const name = getMatchedProps(match, "name");
-                const context = match.matchedScope.state as TeaGlobalContext;
+                const context = match.matchedScope.state as TeaContext;
                 const func = new TeaFunc(context.getType(type), name);
-                context.addFunction(func);
+                context.global.addFunction(func);
                 match.state = func;
             },
             onCompletion: (match) => {
@@ -301,7 +326,7 @@ const teaGrammarParttern: LanguageGrammar = {
                 "name": GrammarPatternDeclare.Identifier
             },
             onMatched: (match) => {
-                // match
+                // ToDo: GoTo 语句的识别其实并未完善 小豆 20220704
             }
         },
         // 变量
@@ -354,7 +379,7 @@ const teaGrammarParttern: LanguageGrammar = {
                 name: GrammarPatternDeclare.Identifier
             },
             onMatched: (match) => {
-                // match
+                // ToDo: GoTo 语句的识别其实并未完善 小豆 20220704
             }
         },
 
@@ -387,7 +412,7 @@ const teaGrammarParttern: LanguageGrammar = {
         },
         "with-structure": {
             name: "With",
-            patterns: ["With <var-open> {block} End With"],
+            patterns: ["With <var-open> {with-block} End With"],
             dictionary: {
                 "var-open": {
                     name: "Var Opened",
@@ -395,8 +420,12 @@ const teaGrammarParttern: LanguageGrammar = {
                 }
             },
             onMatched: (match) => {
-                const varOpen = getMatchedProps(match, "var-open");
-            },
+                //
+            }
+        },
+        "select-structure": {
+            name: "Select Structure",
+            patterns: ["Select <cond> [{block}] [Case <identifier> [{block}] ...] [Case Else [{block}]] End Select"]
         },
 
         // ------------------------------------------- 点操作
@@ -426,11 +455,64 @@ const teaGrammarParttern: LanguageGrammar = {
                 "End With",
                 "Next",
                 "Loop",
-                "End Select"
+                "End Select",
+                "End Select",
+                "Case Else",
+                "Case"
             ],
 
             patterns: [
                 includePattern("var-declare"),
+                includePattern("func-definition"),
+                includePattern("func-call-prefix"),
+                includePattern("if-structure"),
+                includePattern("for-loop"),
+                includePattern("dow-loop"),
+                includePattern("do-loopw"),
+                includePattern("with-structure"),
+                includePattern("do-loop"),
+                {
+                    name: "Statement",
+                    id: "statement",
+                    patterns: ["<expression>"]
+                },
+                {
+                    name: "No sense code",
+                    patterns: ["<no-sense>"],
+                    dictionary: {
+                        "no-sense": {
+                            patterns: ["/[_a-zA-Z0-9]+\\r\\n/"]
+                        }
+                    }
+                }
+            ],
+
+            onMatched: (match) => {
+                match.state = new TeaContext();
+                (match.matchedScope.state as TeaContext).addContext(match.state as TeaContext);
+                if (match.matchedPattern.state instanceof TeaFunc) {
+                    match.matchedPattern.state.setFunctionContext(match.state);
+                }
+
+            },
+            onCompletion: (match) => {
+                const context = (match.matchedScope.state as TeaContext);
+                if (!context) return [];
+
+                return teaBuildinTypesCompletion
+                    .concat(teaBuildinKeywordCompletion);
+            }
+        },
+        "with-block": {
+            name: "Block",
+            begin: [""],
+            end: [
+                "End With",
+            ],
+
+            patterns: [
+                includePattern("var-declare"),
+                includePattern("func-definition"),
                 includePattern("func-call-prefix"),
                 includePattern("if-structure"),
                 includePattern("for-loop"),
@@ -446,11 +528,42 @@ const teaGrammarParttern: LanguageGrammar = {
             ],
 
             onMatched: (match) => {
+                const typeName = getMatchedProps(match.parent.matchedPattern, "var-open");
+                const reg = /([_a-zA-Z][_a-zA-Z0-9]*)(\([.]*\))*/;
+
+                const result = reg.exec(typeName);
                 match.state = new TeaContext();
-                (match.matchedScope.state as TeaContext).addContext(match.state as TeaContext);
-                if (match.matchedPattern.state instanceof TeaFunc) {
-                    match.matchedPattern.state.setFunctionContext(match.state);
+                const context = match.matchedScope.state as TeaContext;
+                context.addContext(match.state as TeaContext);
+
+                if (!result)
+                    return;
+
+                let type: TeaType;
+                if (result.length <= 2) {
+                    const v = context.getVariable(result[1]);
+                    type = v ? v.type : null;
                 }
+                else {
+                    const f = context.getFunc(result[1]);
+                    type = f ? f.type : null;
+                }
+
+                if (!type)
+                    return;
+
+                // 成员展开
+                type.members.forEach(m => {
+                    m.dotFlag = true;
+                    context.addVariable(m);
+                });
+            },
+            onCompletion: (match) => {
+                const context = (match.matchedScope.state as TeaContext);
+                if (!context) return [];
+
+                return teaBuildinTypesCompletion
+                    .concat(teaBuildinKeywordCompletion);
             }
         }
     }

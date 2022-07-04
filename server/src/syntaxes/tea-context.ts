@@ -11,7 +11,7 @@ const linq = require('linq');
 
 // ---------------------------------------------------------------- 一些类型的枚举
 const numTypes = ["Integer", "Double", "Byte", "Long"];
-const txtTypes = ["String", "Char"];
+const txtTypes = ["String"];
 const otherTypes = ["Boolean", "Void"];
 const keywords = [
     "If", "Else", "ElseIf", "End", "Select",
@@ -100,6 +100,8 @@ class TeaVar {
 
     /** 描述 */
     description?: string;
+    /** 必要的点操作前缀 */
+    dotFlag = false;
 
     /**
      * @param type 变量类型
