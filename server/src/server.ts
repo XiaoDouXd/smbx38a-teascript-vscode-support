@@ -40,7 +40,9 @@ import {
 } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import teaGrammarParttern from './syntaxes/tea-grammarparttern';
-import { matchGrammar, compileGrammar } from './syntaxes/meta-grammar';
+import teaBuildinContext from './syntaxes/tea-buildincontext';
+import { TeaGlobalContext } from './syntaxes/tea-context';
+import { matchGrammar, compileGrammar, GrammarMatchResult } from './syntaxes/meta-grammar';
 
 // ---------------------------------------------------------------- 初始化连接对象
 
@@ -53,7 +55,9 @@ const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 // 创建文档列表
 const documentList = new Map<string, TextDocument>();
 
+// 编译语法模板
 const compiledTeaGrammar = compileGrammar(teaGrammarParttern);
+TeaGlobalContext.loadBuildinContext(teaBuildinContext);
 
 // ---------------------------------------------------------------- 初始化事件响应
 
@@ -72,7 +76,7 @@ connection.onInitialize((params: InitializeParams) => {
             textDocumentSync: TextDocumentSyncKind.Incremental,
             // 代码补全
             completionProvider: {
-                resolveProvider: true,
+                // resolveProvider: true,
                 triggerCharacters: [".", " ", "="]
             },
             // // 悬停提示
@@ -108,14 +112,15 @@ documents.onDidClose(e => {
     documentList.delete(e.document.uri);
 });
 
+let match: GrammarMatchResult;
+
 connection.onCompletion((docPos: CompletionParams): CompletionItem[] => {
     try {
-
-        const match = matchGrammar(compiledTeaGrammar, documentList.get(docPos.textDocument.uri));
+        match = matchGrammar(compiledTeaGrammar, documentList.get(docPos.textDocument.uri));
         const completions = match.requestCompletion(docPos.position);
 
-        completions.forEach((e) => {
-            console.log(`${e.label} ~ ${e.kind}`);
+        completions.forEach((c) => {
+            console.log(`${c.label} ~ ${c.kind}`);
         });
 
         return completions;

@@ -271,9 +271,9 @@ const teaGrammarParttern: LanguageGrammar = {
                 const type = getMatchedProps(match, "type");
                 const name = getMatchedProps(match, "name");
                 const context = match.matchedScope.state as TeaGlobalContext;
-                // const func = new TeaFunc(context.getType(type), name);
-                // context.addFunction(func);
-                // match.state = func;
+                const func = new TeaFunc(context.getType(type), name);
+                context.addFunction(func);
+                match.state = func;
             },
             onCompletion: (match) => {
                 if (match.patternName === "type") {
@@ -287,7 +287,7 @@ const teaGrammarParttern: LanguageGrammar = {
             name: "Objcet",
             crossLine: true,
             patterns: [
-                "<func-call-val>", "identifier"
+                "<func-call-val>", "<identifier>"
             ],
             onMatched: (match) => {
                 // match
@@ -391,9 +391,12 @@ const teaGrammarParttern: LanguageGrammar = {
             dictionary: {
                 "var-open": {
                     name: "Var Opened",
-                    patterns: ["<func-call-val>", "<func-call>"]
+                    patterns: ["<func-call-val>", "<func-call>", "<identifier>"]
                 }
-            }
+            },
+            onMatched: (match) => {
+                const varOpen = getMatchedProps(match, "var-open");
+            },
         },
 
         // ------------------------------------------- 点操作

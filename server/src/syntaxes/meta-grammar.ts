@@ -1474,6 +1474,7 @@ export {
     PatternMatchResult,
     ScopeMatchResult,
     UnMatchedPattern,
+    GrammarMatchResult,
 
     includePattern,
     namedPattern,

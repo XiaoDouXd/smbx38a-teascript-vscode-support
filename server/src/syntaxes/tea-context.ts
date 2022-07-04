@@ -98,6 +98,9 @@ class TeaVar {
     /** 变量所属上下文 */
     context: TeaContext;
 
+    /** 描述 */
+    description?: string;
+
     /**
      * @param type 变量类型
      * @param name 变量名
@@ -107,7 +110,7 @@ class TeaVar {
         this.name = name;
     }
     toString() {
-        return `${this.name} As ${this.type.name}`;
+        return `${this.description ? this.description + " \n" : ''}${this.name} As ${this.type.name}`;
     }
 }
 /** 函数描述 */
@@ -122,6 +125,9 @@ class TeaFunc {
     functionContext: TeaContext;
     /** 跨域函数 */
     export = false;
+
+    /** 描述 */
+    description?: string;
 
     /**
      * @param type 返回类型
@@ -152,7 +158,7 @@ class TeaFunc {
         this.parameters.forEach(param => context.addVariable(param));
     }
     toString() {
-        return `${this.export == false ? "" : "Export"} Script ${this.name}(${this.parameters.map(param => param.toString()).join(", ")} ${type.name === "Void" ? "" : `, Return ${type.name}`})`;
+        return `${this.description ? this.description + " \n" : ''}${this.export == false ? "" : "Export"} Script ${this.name}(${this.parameters.map(param => param.toString()).join(", ")} ${this.type.name === "Void" ? "" : `, Return ${this.type.name}`})`;
     }
 }
 /** 上下文描述类 */
@@ -174,6 +180,7 @@ class TeaContext {
     addContext(context: TeaContext) {
         this.contexts.push(context);
         context.upper = this;
+        context.global = this.global;
     }
     /**
      * 添加变量
@@ -201,7 +208,7 @@ class TeaContext {
      * @returns 类型描述类
      */
     getType(name: string): TeaType {
-        const reg = new RegExp(/(Integer|Double|Byte|Long)/, "i");
+        const reg = new RegExp(/(Integer|Double|Byte|Long|String)/, "i");
 
         const match = reg.exec(name);
         if (match) {
@@ -212,6 +219,9 @@ class TeaContext {
 
         const t = linq.from(this.global.declaredTypes).where((t: TeaType) => t.name === name).firstOrDefault();
         return t ? t : new TeaType(`${name}?`);
+    }
+    getFunc(name: string): TeaFunc {
+        return this.global.getFunc(name);
     }
     /**
      * 获取所有变量
@@ -239,9 +249,31 @@ class TeaContext {
         return varList;
     }
 }
+/** with 上下文描述类 */
+class TeaWithContext extends TeaContext {
+    withType: TeaType;
+
+    constructor(t: TeaFunc | TeaType) {
+        super();
+
+        const f = t as TeaFunc;
+        if (f)
+            this.withType = f.type;
+        else {
+            t = t as TeaType;
+            this.withType = t;
+        }
+    }
+}
 /** 全局上下文描述类 */
 class TeaGlobalContext extends TeaContext {
-    /** 变量声明 */
+
+    protected static smbxBuildinVar: TeaVar[];
+    protected static smbxBuildinType: TeaType[];
+    static smbxBuildinFunc: TeaFunc[];
+    private static _buildinLoaded = false;
+
+    /** 类型声明 */
     declaredTypes: TeaType[] = [];
     /** 函数声明 */
     functions: TeaFunc[] = [];
@@ -273,20 +305,179 @@ class TeaGlobalContext extends TeaContext {
     addFunction(func: TeaFunc) {
         this.functions.push(func);
     }
-}
-/** SMBX 全局上下文 */
-const smbxGlobalContext = new TeaGlobalContext();
-/** 内建函数 */
-class BuildinFunc {
+    /**
+     * 获取变量
+     * @param name 变量名
+     * @returns 变量描述类
+     */
+    getVariable(name: string): TeaVar {
+        let v = linq.from(this.variables).where((variable: TeaVar) => variable.name === name).firstOrDefault();
+        if (!v) {
+            v = linq.from(TeaGlobalContext.smbxBuildinVar).where((variable: TeaVar) => variable.name === name).firstOrDefault();
+            if (!v)
+                return null;
+        }
+        return v;
+    }
+    /**
+     * 获取类型
+     * @param name 类型名
+     * @returns 类型描述类
+     */
+    getType(name: string): TeaType {
+        const reg = new RegExp(/(Integer|Double|Byte|Long|String)/, "i");
 
-}
-/** 内建变量 */
-class BuildinVar {
+        const match = reg.exec(name);
+        if (match) {
+            return new TeaType(match[1]);
+        }
+        else if (teaBuildinTypes.indexOf(name) >= 0)
+            return new TeaType(name);
 
+        let t = linq.from(this.global.declaredTypes).where((t: TeaType) => t.name === name).firstOrDefault();
+        if (!t) {
+            t = linq.from(TeaGlobalContext.smbxBuildinType).where((t: TeaType) => t.name === name).firstOrDefault();
+        }
+        return t ? t : new TeaType(`${name}?`);
+    }
+    /** 获得函数 */
+    getFunc(name: string): TeaFunc {
+        let v = linq.from(this.functions).where((func: TeaFunc) => func.name === name).firstOrDefault();
+        if (!v)
+            v = linq.from(TeaGlobalContext.smbxBuildinFunc).where((func: TeaFunc) => func.name === name).firstOrDefault();
+
+        return v ? v : null;
+    }
+    static loadBuildinContext(declare: TeaBuildinContextDeclare) {
+        if (TeaGlobalContext._buildinLoaded)
+            return;
+
+        const tyMap: Map<string, TeaType> = new Map();
+        // 加载内建类型等
+        if (declare.types) {
+            TeaGlobalContext.smbxBuildinType = [];
+
+            declare.types.forEach((t) => {
+
+                const m: TeaVar[] = [];
+                t.field.forEach((f) => {
+                    let tSave = tyMap.get(f.type);
+                    if (tSave) {
+                        const v = new TeaVar(tSave, f.name);
+                        m.push(v);
+                        v.description = f.description;
+                    }
+                    else {
+                        tSave = new TeaType(f.type);
+                        tyMap.set(tSave.name, tSave);
+                        const v = new TeaVar(tSave, f.name);
+                        m.push(v);
+                        v.description = f.description;
+                    }
+
+                });
+
+                const ty = new TeaType(t.name, m);
+                TeaGlobalContext.smbxBuildinType.push(ty);
+                tyMap.set(ty.name, ty);
+            });
+        }
+        if (declare.funcs) {
+            TeaGlobalContext.smbxBuildinFunc = [];
+            declare.funcs.forEach((f) => {
+                const t = tyMap.get(f.type);
+                if (t) {
+                    const func = new TeaFunc(t, f.name);
+                    TeaGlobalContext.smbxBuildinFunc.push(func);
+                    let i = 0;
+                    f.params.forEach((p) => {
+                        const t = tyMap.get(p);
+                        if (t)
+                            func.addParameter(new TeaVar(t, `_${i++}`));
+                        else {
+                            const tSave = new TeaType(p);
+                            tyMap.set(tSave.name, tSave);
+                            func.addParameter(new TeaVar(tSave, `_${i++}`));
+                        }
+                    });
+                    func.description = f.description;
+                }
+                else {
+                    const tSave = new TeaType(f.type);
+                    tyMap.set(tSave.name, tSave);
+                    const func = new TeaFunc(tSave, f.name);
+                    TeaGlobalContext.smbxBuildinFunc.push(func);
+                    let i = 0;
+                    f.params.forEach((p) => {
+                        const t = tyMap.get(p);
+                        if (t)
+                            func.addParameter(new TeaVar(t, `_${i++}`));
+                        else {
+                            const tSaveParam = new TeaType(p);
+                            tyMap.set(tSaveParam.name, tSaveParam);
+                            func.addParameter(new TeaVar(tSaveParam, `_${i++}`));
+                        }
+                    });
+                    func.description = f.description;
+                }
+            });
+        }
+        if (declare.vars) {
+            TeaGlobalContext.smbxBuildinVar = [];
+            declare.vars.forEach((v) => {
+                const t = tyMap.get(v.type);
+                if (t)
+                    TeaGlobalContext.smbxBuildinVar.push(new TeaVar(t, v.name));
+                else {
+                    const tSave = new TeaType(v.type);
+                    tyMap.set(tSave.name, tSave);
+                    TeaGlobalContext.smbxBuildinVar.push(new TeaVar(tSave, v.name));
+                }
+            });
+        }
+
+        TeaGlobalContext._buildinLoaded = true;
+    }
 }
-/** 初始化全局上下文 */
-function initSMBXGlobalContext(funcs: BuildinFunc, vars: BuildinVar) {
-    // 初始化
+
+// ---------------------------------------------------------------- 内建函数和类型的声明
+
+class TeaBuildinTypeFieldDeclare {
+    /** 字段名 */
+    name: string;
+    /** 字段类型 */
+    type: string;
+    /** 详情 */
+    description?: string;
+}
+class TeaBuildinTypeDeclare {
+    /** 类型名 */
+    name: string;
+    /** 类型字段 */
+    field: TeaBuildinTypeFieldDeclare[];
+}
+class TeaBuildinFuncDeclare {
+    /** 函数名 */
+    name: string;
+    /** 类型名 */
+    type: string;
+    /** 参数类型名 */
+    params: string[];
+
+    /** 函数详情 */
+    description?: string;
+}
+class TeaBuildinVarDeclare {
+    name: string;
+    type: string;
+}
+class TeaBuildinContextDeclare {
+    /** 内建类型 */
+    types: TeaBuildinTypeDeclare[];
+    /** 内建变量 */
+    vars: TeaBuildinVarDeclare[];
+    /** 内建函数 */
+    funcs: TeaBuildinFuncDeclare[];
 }
 
 // ---------------------------------------------------------------- 分析和封装方法
@@ -316,7 +507,13 @@ function createCompletionItemsForFunc(funcList: TeaFunc[]): CompletionItem[] {
             kind: CompletionItemKind.Function,
             detail: func.toString()
         };
-    });
+    }).concat(TeaGlobalContext.smbxBuildinFunc.map(func => {
+        return {
+            label: func.name,
+            kind: CompletionItemKind.Function,
+            detail: func.toString()
+        };
+    }));
 }
 /**
  * 为成员变量创建智能补全消息
@@ -354,12 +551,15 @@ export {
     teaBuildinKeywordCompletion,
     TeaType,
     TeaVar,
-    TeaContext,
     TeaFunc,
     TeaArray,
+    TeaContext,
+    TeaGlobalContext,
+    TeaWithContext,
     createCompletionItemsForVar,
     createCompletionItemsForFunc,
     createCompletionItemsForMembers,
     createCompletionItems,
-    TeaGlobalContext
+
+    TeaBuildinContextDeclare
 };
