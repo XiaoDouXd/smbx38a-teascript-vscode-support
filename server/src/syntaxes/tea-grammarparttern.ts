@@ -11,7 +11,7 @@ import {
     TeaType,
     teaBuildinKeywordCompletion
 } from './tea-context';
-import { LanguageGrammar, GrammarPatternDeclare, getMatchedProps, includePattern, MatchResult, PatternMatchResult } from './meta-grammar';
+import { LanguageGrammar, GrammarPatternDeclare, getMatchedProps, includePattern, MatchResult, PatternMatchResult, GrammarMatchResult } from './meta-grammar';
 import { CompletionItemKind } from 'vscode-languageserver';
 
 // ----------------------------------------------------------------
@@ -55,6 +55,7 @@ function onExpressionMatch(match: MatchResult) {
     if (match.patternName === "expr-unit") {
 
         if (match.text === ".") {
+            GrammarMatchResult.shieldKeywordCompletion = true;
             return context.getAllVariables().map(v => {
                 if (v.dotFlag)
                     return {
@@ -70,6 +71,7 @@ function onExpressionMatch(match: MatchResult) {
     }
     else if (match.patternName === "operator") {
         if (match.text === ".") {
+            GrammarMatchResult.shieldKeywordCompletion = true;
             const context = match.matchedScope.state as TeaContext;
             const prevIdx = match.parent.parent.children.indexOf(match.parent) - 1;
             const prevMatch = match.parent.parent.children[prevIdx];
@@ -150,11 +152,7 @@ const teaGrammarParttern: LanguageGrammar = {
                 "<expression>",
                 "<func-call-prefix>",
                 "<goto-call>",
-            ],
-            onCompletion: (match) => {
-                return teaBuildinTypesCompletion
-                    .concat(teaBuildinKeywordCompletion);
-            },
+            ]
         }
     ],
     patternRepository: {
@@ -305,6 +303,15 @@ const teaGrammarParttern: LanguageGrammar = {
                     return teaBuildinTypesCompletion;
                 }
                 return [];
+            },
+            onHover: (match) => {
+                const name = getMatchedProps(match.matchedPattern, "name");
+                const context = match.matchedScope.state as TeaContext;
+                if (!context)
+                    return Promise.resolve({ contents: [""], });
+
+                const o = context.global.getFunc(name);
+                return Promise.resolve({ contents: [`${o ? o : ""}`], });
             }
         },
         // 对象调用
@@ -335,7 +342,16 @@ const teaGrammarParttern: LanguageGrammar = {
             ignore: /(Do|do|Loop|loop|Else|else)/,
             patterns: [
                 "<identifier>"
-            ]
+            ],
+            onHover: (match) => {
+                const name = getMatchedProps(match.matchedPattern, "var");
+                const context = match.matchedScope.state as TeaContext;
+                if (!context)
+                    return Promise.resolve({ contents: [""], });
+
+                const o = context.getVariable(name);
+                return Promise.resolve({ contents: [`${o ? o : ""}`], });
+            }
         },
 
         // ------------------------------------------- 调用定义
@@ -369,6 +385,15 @@ const teaGrammarParttern: LanguageGrammar = {
                     ],
                     ignore: /(Array|Val|GVal)/g
                 }
+            },
+            onHover: (match) => {
+                const name = getMatchedProps(match.matchedPattern, "name");
+                const context = match.matchedScope.state as TeaContext;
+                if (!context)
+                    return Promise.resolve({ contents: [""], });
+
+                const o = context.global.getFunc(name);
+                return Promise.resolve({ contents: [`${o ? o : ""}`], });
             }
         },
         // goto 语句
@@ -440,8 +465,18 @@ const teaGrammarParttern: LanguageGrammar = {
                         "<func-call>"
                     ]
                 }
+            },
+            onHover: (match) => {
+                const name = getMatchedProps(match.matchedPattern, "field");
+                const context = match.matchedScope.state as TeaContext;
+                if (!context)
+                    return Promise.resolve({ contents: [""], });
+
+                const o = context.getVariable(name);
+                return Promise.resolve({ contents: [`${o ? o : ""}`], });
             }
         }
+
     },
     scopeRepository: {
         "block": {
@@ -496,6 +531,8 @@ const teaGrammarParttern: LanguageGrammar = {
 
             },
             onCompletion: (match) => {
+                if (match.matchedPattern.patternName !== "no-sense")
+                    return [];
                 const context = (match.matchedScope.state as TeaContext);
                 if (!context) return [];
 
@@ -559,6 +596,8 @@ const teaGrammarParttern: LanguageGrammar = {
                 });
             },
             onCompletion: (match) => {
+                if (match.matchedPattern.patternName !== "no-sense")
+                    return [];
                 const context = (match.matchedScope.state as TeaContext);
                 if (!context) return [];
 

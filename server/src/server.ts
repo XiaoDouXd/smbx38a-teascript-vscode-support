@@ -18,32 +18,19 @@ const logger = getLogger("smbx_tea");
 import {
     createConnection,
     TextDocuments,
-    Diagnostic,
-    DiagnosticSeverity,
     ProposedFeatures,
     InitializeParams,
     CompletionItem,
-    CompletionItemKind,
-    TextDocumentPositionParams,
-    TextDocumentSyncKind,
     InitializeResult,
     HoverParams,
     Hover,
-    SignatureHelpParams,
-    SignatureHelp,
-    DocumentFormattingParams,
-    TextEdit,
-    DocumentHighlightParams,
-    DocumentHighlight,
-    DocumentHighlightKind,
     CompletionParams,
-    ResourceOperationKind,
 } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import teaGrammarParttern from './syntaxes/tea-grammarparttern';
 import teaBuildinContext from './syntaxes/tea-buildincontext';
 import { TeaGlobalContext } from './syntaxes/tea-context';
-import { matchGrammar, compileGrammar, GrammarMatchResult, MatchResult } from './syntaxes/meta-grammar';
+import { matchGrammar, compileGrammar, GrammarMatchResult } from './syntaxes/meta-grammar';
 
 // ---------------------------------------------------------------- 初始化连接对象
 
@@ -89,8 +76,8 @@ connection.onInitialize((params: InitializeParams) => {
                 triggerCharacters: [".", " ", "="]
             },
 
-            // // 悬停提示
-            // hoverProvider: true,
+            // 悬停提示
+            hoverProvider: true,
             // // 签名提示
             // signatureHelpProvider: {
             //   triggerCharacters: ["("],
@@ -117,6 +104,10 @@ documents.onDidOpen(e => {
     documentMatch.set(e.document.uri, matchGrammar(compiledTeaGrammar, e.document));
 });
 
+documents.onDidChangeContent(e => {
+    updateMatch(e.document.uri);
+});
+
 documents.onDidClose(e => {
     documentList.delete(e.document.uri);
     documentMatch.delete(e.document.uri);
@@ -133,9 +124,12 @@ connection.onCompletion((docPos: CompletionParams): CompletionItem[] => {
 
 // 悬停事件
 connection.onHover((params: HoverParams): Promise<Hover> => {
-    return Promise.resolve({
-        contents: ["..."],
-    });
+    try {
+        return documentMatch.get(params.textDocument.uri).requestHover(params.position);
+    }
+    catch (ex) {
+        console.error(ex);
+    }
 });
 
 // -------------------------------------------------------------- 开启事件监听

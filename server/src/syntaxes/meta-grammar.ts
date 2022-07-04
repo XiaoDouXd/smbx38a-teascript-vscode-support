@@ -3,13 +3,15 @@
 // ================================================================
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { Position, CompletionItem, Diagnostic } from 'vscode-languageserver';
+import { Position, CompletionItem, Diagnostic, Hover } from 'vscode-languageserver/node';
 import { NoParamCallback } from 'fs';
+import { teaBuildinKeywordCompletion, teaBuildinTypesCompletion } from './tea-context';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const linq = require('linq');
 
 type DocumentCompletionCallback = (match: MatchResult) => CompletionItem[];
+type DocumentHoverCallback = (match: MatchResult) => Promise<Hover>;
 type PatternMatchedCallback = (patternMatch: PatternMatchResult) => void;
 type ScopeMatchedCallback = (scopeMatch: ScopeMatchResult) => void;
 type DocumentDiagnoseCallback = (unMatched: UnMatchedText) => Diagnostic[];
@@ -783,6 +785,9 @@ class ScopeMatchResult extends MatchResult {
 }
 /** 语法匹配结果 */
 class GrammarMatchResult extends ScopeMatchResult {
+
+    static shieldKeywordCompletion = false;
+
     grammar: LanguageGrammar;
     constructor(doc: TextDocument, grammar: Grammar) {
         super(doc, grammar);
@@ -792,6 +797,7 @@ class GrammarMatchResult extends ScopeMatchResult {
         let completions: CompletionItem[] = [];
 
         // 获得当前光标位置
+        GrammarMatchResult.shieldKeywordCompletion = false;
         const match = this.locateMatchAtPosition(pos);
         if (!match)
             return [];
@@ -828,11 +834,32 @@ class GrammarMatchResult extends ScopeMatchResult {
             }
         }
 
+        if (!GrammarMatchResult.shieldKeywordCompletion)
+            completions = completions.concat(teaBuildinTypesCompletion).concat(teaBuildinKeywordCompletion);
+
         completions = linq.from(completions)
             .where((item: CompletionItem) => item !== undefined)
             .distinct((comp: CompletionItem) => comp.label)
             .toArray();
+
+        GrammarMatchResult.shieldKeywordCompletion = false;
         return completions;
+    }
+    requestHover(pos: Position): Promise<Hover> {
+        // 获得当前光标位置
+        const match = this.locateMatchAtPosition(pos);
+        if (!match)
+            return Promise.resolve({ contents: [""] });
+
+        for (let matchP = match; matchP != null; matchP = matchP.parent) {
+            if (matchP.pattern)
+                if (matchP.pattern.onHover)
+                    return matchP.pattern.onHover(match);
+        }
+
+        return Promise.resolve({
+            contents: [""]
+        });
     }
 }
 /** 未匹配文本 */
@@ -1028,6 +1055,8 @@ class GrammarPatternDeclare {
     onDiagnostic?: DocumentDiagnoseCallback;
     /** 补全时回调 */
     onCompletion?: DocumentCompletionCallback;
+    /** 悬停提示时回调 */
+    onHover?: DocumentHoverCallback;
 
     /** 父语法模板 */
     parent?: GrammarPatternDeclare;

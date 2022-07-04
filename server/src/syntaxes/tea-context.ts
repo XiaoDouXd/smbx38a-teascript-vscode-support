@@ -19,12 +19,6 @@ const keywords = [
     "GoSub"
 ];
 
-/** 连接函数: 用于生成类型总表 */
-function concat<T>(list: T[][]): T[] {
-    let result: T[] = [];
-    list.forEach(subList => result = result.concat(subList));
-    return result;
-}
 const teaBuildinTypes = numTypes.concat(txtTypes, otherTypes);
 const teaBuildinTypesCompletion: CompletionItem[]
     = teaBuildinTypes.map(type => {
@@ -112,7 +106,7 @@ class TeaVar {
         this.name = name;
     }
     toString() {
-        return `${this.description ? this.description + " \n" : ''}${this.name} As ${this.type.name}`;
+        return `${this.description ? this.description + ": \n" : ''}${this.name} As ${this.type.name}`;
     }
 }
 /** 函数描述 */
@@ -160,7 +154,7 @@ class TeaFunc {
         this.parameters.forEach(param => context.addVariable(param));
     }
     toString() {
-        return `${this.description ? this.description + " \n" : ''}${this.export == false ? "" : "Export"} Script ${this.name}(${this.parameters.map(param => param.toString()).join(", ")} ${this.type.name === "Void" ? "" : `, Return ${this.type.name}`})`;
+        return `${this.description ? this.description + ": \n" : ''}${this.export == false ? "" : "Export"} Script ${this.name}(${this.parameters.map(param => param.toString()).join(", ")} ${this.type.name === "Void" ? "" : `, Return ${this.type.name}`})`;
     }
 }
 /** 上下文描述类 */
@@ -249,22 +243,6 @@ class TeaContext {
             varList.push(v);
         }
         return varList;
-    }
-}
-/** with 上下文描述类 */
-class TeaWithContext extends TeaContext {
-    withType: TeaType;
-
-    constructor(t: TeaFunc | TeaType) {
-        super();
-
-        const f = t as TeaFunc;
-        if (f)
-            this.withType = f.type;
-        else {
-            t = t as TeaType;
-            this.withType = t;
-        }
     }
 }
 /** 全局上下文描述类 */
@@ -393,13 +371,13 @@ class TeaGlobalContext extends TeaContext {
                     TeaGlobalContext.smbxBuildinFunc.push(func);
                     let i = 0;
                     f.params.forEach((p) => {
-                        const t = tyMap.get(p);
+                        const t = tyMap.get(p.type);
                         if (t)
-                            func.addParameter(new TeaVar(t, `_${i++}`));
+                            func.addParameter(new TeaVar(t, `-${i++}-${p.name}-`));
                         else {
-                            const tSave = new TeaType(p);
+                            const tSave = new TeaType(p.type);
                             tyMap.set(tSave.name, tSave);
-                            func.addParameter(new TeaVar(tSave, `_${i++}`));
+                            func.addParameter(new TeaVar(tSave, `-${i++}-${p.name}-`));
                         }
                     });
                     func.description = f.description;
@@ -411,13 +389,13 @@ class TeaGlobalContext extends TeaContext {
                     TeaGlobalContext.smbxBuildinFunc.push(func);
                     let i = 0;
                     f.params.forEach((p) => {
-                        const t = tyMap.get(p);
+                        const t = tyMap.get(p.type);
                         if (t)
-                            func.addParameter(new TeaVar(t, `_${i++}`));
+                            func.addParameter(new TeaVar(t, `-${i++}-${p.name}-`));
                         else {
-                            const tSaveParam = new TeaType(p);
+                            const tSaveParam = new TeaType(p.type);
                             tyMap.set(tSaveParam.name, tSaveParam);
-                            func.addParameter(new TeaVar(tSaveParam, `_${i++}`));
+                            func.addParameter(new TeaVar(tSaveParam, `-${i++}-${p.name}-`));
                         }
                     });
                     func.description = f.description;
@@ -428,12 +406,17 @@ class TeaGlobalContext extends TeaContext {
             TeaGlobalContext.smbxBuildinVar = [];
             declare.vars.forEach((v) => {
                 const t = tyMap.get(v.type);
-                if (t)
-                    TeaGlobalContext.smbxBuildinVar.push(new TeaVar(t, v.name));
+                if (t) {
+                    const va = new TeaVar(t, v.name);
+                    va.description = v.description;
+                    TeaGlobalContext.smbxBuildinVar.push(va);
+                }
                 else {
                     const tSave = new TeaType(v.type);
                     tyMap.set(tSave.name, tSave);
-                    TeaGlobalContext.smbxBuildinVar.push(new TeaVar(tSave, v.name));
+                    const va = new TeaVar(tSave, v.name);
+                    va.description = v.description;
+                    TeaGlobalContext.smbxBuildinVar.push(va);
                 }
             });
         }
@@ -463,8 +446,8 @@ class TeaBuildinFuncDeclare {
     name: string;
     /** 类型名 */
     type: string;
-    /** 参数类型名 */
-    params: string[];
+    /** 参数名 */
+    params: TeaBuildinVarDeclare[];
 
     /** 函数详情 */
     description?: string;
@@ -472,6 +455,7 @@ class TeaBuildinFuncDeclare {
 class TeaBuildinVarDeclare {
     name: string;
     type: string;
+    description?: string;
 }
 class TeaBuildinContextDeclare {
     /** 内建类型 */
@@ -557,7 +541,6 @@ export {
     TeaArray,
     TeaContext,
     TeaGlobalContext,
-    TeaWithContext,
     createCompletionItemsForVar,
     createCompletionItemsForFunc,
     createCompletionItemsForMembers,
