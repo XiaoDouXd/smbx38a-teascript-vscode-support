@@ -296,6 +296,11 @@ const teaGrammarParttern: LanguageGrammar = {
                 const context = match.matchedScope.state as TeaContext;
                 const func = new TeaFunc(context.getType(type), name);
                 context.global.addFunction(func);
+
+                const con = new TeaContext();
+                context.addContext(con);
+                func.setFunctionContext(con);
+
                 match.state = func;
             },
             onCompletion: (match) => {
@@ -342,16 +347,16 @@ const teaGrammarParttern: LanguageGrammar = {
             ignore: /(Do|do|Loop|loop|Else|else)/,
             patterns: [
                 "<identifier>"
-            ],
-            onHover: (match) => {
-                const name = getMatchedProps(match.matchedPattern, "var");
-                const context = match.matchedScope.state as TeaContext;
-                if (!context)
-                    return Promise.resolve({ contents: [""], });
+            ]
+            // onHover: (match) => {
+            //     const name = getMatchedProps(match.matchedPattern, "var");
+            //     const context = match.matchedScope.state as TeaContext;
+            //     if (!context)
+            //         return Promise.resolve({ contents: [""], });
 
-                const o = context.getVariable(name);
-                return Promise.resolve({ contents: [`${o ? o : ""}`], });
-            }
+            //     const o = context.getVariable(name);
+            //     return Promise.resolve({ contents: [`${o ? o : ""}`], });
+            // }
         },
 
         // ------------------------------------------- 调用定义
@@ -523,12 +528,13 @@ const teaGrammarParttern: LanguageGrammar = {
             ],
 
             onMatched: (match) => {
+                if (match.matchedPattern.state instanceof TeaFunc) {
+                    const func = match.matchedPattern.state as TeaFunc;
+                    match.state = func.functionContext;
+                    return;
+                }
                 match.state = new TeaContext();
                 (match.matchedScope.state as TeaContext).addContext(match.state as TeaContext);
-                if (match.matchedPattern.state instanceof TeaFunc) {
-                    match.matchedPattern.state.setFunctionContext(match.state);
-                }
-
             },
             onCompletion: (match) => {
                 if (match.matchedPattern.patternName !== "no-sense")
@@ -572,17 +578,18 @@ const teaGrammarParttern: LanguageGrammar = {
                 match.state = new TeaContext();
                 const context = match.matchedScope.state as TeaContext;
                 context.addContext(match.state as TeaContext);
+                const contextThis = match.state as TeaContext;
 
                 if (!result)
                     return;
 
                 let type: TeaType;
                 if (result.length <= 2) {
-                    const v = context.getVariable(result[1]);
+                    const v = contextThis.getVariable(result[1]);
                     type = v ? v.type : null;
                 }
                 else {
-                    const f = context.getFunc(result[1]);
+                    const f = contextThis.getFunc(result[1]);
                     type = f ? f.type : null;
                 }
 
@@ -592,7 +599,7 @@ const teaGrammarParttern: LanguageGrammar = {
                 // 成员展开
                 type.members.forEach(m => {
                     m.dotFlag = true;
-                    context.addVariable(m);
+                    contextThis.addVariable(m);
                 });
             },
             onCompletion: (match) => {

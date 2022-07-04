@@ -24,7 +24,7 @@
 				},
 				{
 					"name": "keyword.control",
-					"match": "\\b(((A|a)s)|((C|c)all)|((C|c)ase)|((D|d)im)|((E|e)lse(I|i)f)|((E|e)lse)|((E|e)nd)|((E|e)xport)|((F|f)or)|((G|g)o(T|t)o)|((G|g)o(S|s)ub)|((I|i)f)|((n|N)ext)|((R|r)eturn)|((S|s)cript)|((S|s)elect)|((S|s)tep)|((T|t)hen)|((T|t)o)|((W|w)hile)|((W|w)ith)|((D|d)o)|((L|l)oop))|((e|E)xit)|((G|g)o(S|s)ub)\\b"
+					"match": "\\b((((A|a)s)|((C|c)all)|((C|c)ase)|((D|d)im)|((E|e)lse(I|i)f)|((E|e)lse)|((E|e)nd)|((E|e)xport)|((F|f)or)|((G|g)o(T|t)o)|((G|g)o(S|s)ub)|((I|i)f)|((n|N)ext)|((R|r)eturn)|((S|s)cript)|((S|s)elect)|((S|s)tep)|((T|t)hen)|((T|t)o)|((W|w)hile)|((W|w)ith)|((D|d)o)|((L|l)oop))|((e|E)xit)|((G|g)o(S|s)ub))\\b"
 				}
 			]
 		},

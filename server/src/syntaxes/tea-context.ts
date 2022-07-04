@@ -372,12 +372,21 @@ class TeaGlobalContext extends TeaContext {
                     let i = 0;
                     f.params.forEach((p) => {
                         const t = tyMap.get(p.type);
-                        if (t)
-                            func.addParameter(new TeaVar(t, `-${i++}-${p.name}-`));
+                        if (t) {
+                            const param = new TeaVar(t, `-${p.name}-`);
+                            param.description = p.description;
+                            if (param.description)
+                                param.description = `${++i}. ` + param.description;
+                            func.addParameter(param);
+                        }
                         else {
                             const tSave = new TeaType(p.type);
                             tyMap.set(tSave.name, tSave);
-                            func.addParameter(new TeaVar(tSave, `-${i++}-${p.name}-`));
+                            const param = new TeaVar(tSave, `-${p.name}-`);
+                            param.description = p.description;
+                            if (param.description)
+                                param.description = `${++i}. ` + param.description;
+                            func.addParameter(param);
                         }
                     });
                     func.description = f.description;
@@ -390,12 +399,21 @@ class TeaGlobalContext extends TeaContext {
                     let i = 0;
                     f.params.forEach((p) => {
                         const t = tyMap.get(p.type);
-                        if (t)
-                            func.addParameter(new TeaVar(t, `-${i++}-${p.name}-`));
+                        if (t) {
+                            const param = new TeaVar(t, `-${p.name}-`);
+                            param.description = p.description;
+                            if (param.description)
+                                param.description = `${++i}. ` + param.description;
+                            func.addParameter(param);
+                        }
                         else {
                             const tSaveParam = new TeaType(p.type);
                             tyMap.set(tSaveParam.name, tSaveParam);
-                            func.addParameter(new TeaVar(tSaveParam, `-${i++}-${p.name}-`));
+                            const param = new TeaVar(tSaveParam, `-${p.name}-`);
+                            param.description = p.description;
+                            if (param.description)
+                                param.description = `${++i}. ` + param.description;
+                            func.addParameter(param);
                         }
                     });
                     func.description = f.description;

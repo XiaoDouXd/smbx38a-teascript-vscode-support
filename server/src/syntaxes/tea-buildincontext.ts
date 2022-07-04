@@ -290,7 +290,7 @@ const teaBuildinContext: TeaBuildinContextDeclare = {
 
     // 内建函数
     funcs: [
-        { name: "BGO", type: "-bgo-return-", params: [{ type: "Integer", name: "id" }], description: "背景设置" },
+        { name: "BGO", type: "-bgo-return-", params: [{ type: "Integer", name: "id", description: "玩家的id" }], description: "背景设置" },
         { name: "bgo", type: "-bgo-return-", params: [{ type: "Integer", name: "id" }], description: "背景设置" },
         { name: "BGP", type: "-bgp-return-", params: [{ type: "Integer", name: "id" }], description: "背景分割设置" },
         { name: "bgp", type: "-bgp-return-", params: [{ type: "Integer", name: "id" }], description: "背景分割设置" },
