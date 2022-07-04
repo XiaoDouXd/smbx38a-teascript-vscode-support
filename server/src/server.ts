@@ -73,7 +73,7 @@ connection.onInitialize((params: InitializeParams) => {
             // 代码补全
             completionProvider: {
                 // resolveProvider: true,
-                triggerCharacters: [".", " ", "="]
+                triggerCharacters: ["."]
             },
 
             // 悬停提示

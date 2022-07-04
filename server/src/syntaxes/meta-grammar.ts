@@ -787,6 +787,7 @@ class ScopeMatchResult extends MatchResult {
 class GrammarMatchResult extends ScopeMatchResult {
 
     static shieldKeywordCompletion = false;
+    private static _toignoreComment = false;
 
     grammar: LanguageGrammar;
     constructor(doc: TextDocument, grammar: Grammar) {
@@ -798,9 +799,13 @@ class GrammarMatchResult extends ScopeMatchResult {
 
         // 获得当前光标位置
         GrammarMatchResult.shieldKeywordCompletion = false;
+        GrammarMatchResult._toignoreComment = false;
+
         const match = this.locateMatchAtPosition(pos);
         if (!match)
             return [];
+        if (!match.matched)
+            GrammarMatchResult._toignoreComment = true;
 
         if (match instanceof UnMatchedPattern) {
             completions = completions.concat(match.requestCompletion(pos));
@@ -834,21 +839,22 @@ class GrammarMatchResult extends ScopeMatchResult {
             }
         }
 
-        if (!GrammarMatchResult.shieldKeywordCompletion)
+        if (!GrammarMatchResult.shieldKeywordCompletion) {
+            if (GrammarMatchResult._toignoreComment)
+                return [];
             completions = completions.concat(teaBuildinTypesCompletion).concat(teaBuildinKeywordCompletion);
-
+        }
         completions = linq.from(completions)
             .where((item: CompletionItem) => item !== undefined)
             .distinct((comp: CompletionItem) => comp.label)
             .toArray();
 
-        GrammarMatchResult.shieldKeywordCompletion = false;
         return completions;
     }
     requestHover(pos: Position): Promise<Hover> {
         // 获得当前光标位置
         const match = this.locateMatchAtPosition(pos);
-        if (!match)
+        if (!match || !match.matched)
             return Promise.resolve({ contents: [""] });
 
         for (let matchP = match; matchP != null; matchP = matchP.parent) {

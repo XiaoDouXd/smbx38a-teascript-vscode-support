@@ -120,7 +120,7 @@ const teaGrammarParttern: LanguageGrammar = {
     ],
     ignore: {
         patterns: [
-            "'*"
+            "/'[.]*/"
         ]
     },
     onMatchedInit: (match) => {
