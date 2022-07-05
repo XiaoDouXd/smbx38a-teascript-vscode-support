@@ -3,7 +3,7 @@
 // ================================================================
 
 import { type } from 'os';
-import { CompletionItem, CompletionItemKind } from 'vscode-languageserver';
+import { CompletionItem, CompletionItemKind, Position } from 'vscode-languageserver';
 import { matchGrammar, MatchResult } from './meta-grammar';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -16,7 +16,8 @@ const otherTypes = ["Boolean", "Void"];
 const keywords = [
     "If", "Else", "ElseIf", "End", "Select",
     "Case", "With", "Export", "Script", "GoTo",
-    "GoSub"
+    "GoSub", "Dim", "As", "Next", "For", "Do", "Loop", "While",
+    "Step", "Call"
 ];
 
 const teaBuildinTypes = numTypes.concat(txtTypes, otherTypes);
@@ -92,6 +93,9 @@ class TeaVar {
     /** 变量所属上下文 */
     context: TeaContext;
 
+    /** 定义位置 */
+    pos = 0;
+
     /** 描述 */
     description?: string;
     /** 必要的点操作前缀 */
@@ -124,6 +128,9 @@ class TeaFunc {
 
     /** 描述 */
     description?: string;
+
+    /** 声明位置 */
+    pos = 0;
 
     /**
      * @param type 返回类型
@@ -284,6 +291,20 @@ class TeaGlobalContext extends TeaContext {
      */
     addFunction(func: TeaFunc) {
         this.functions.push(func);
+    }
+    /**
+     * 获取所有变量
+     * @returns 一个{变量名, 变量描述类}字典
+     */
+    protected internalGetAllVariables(): Map<string, TeaVar> {
+        const varMap = new Map<string, TeaVar>();
+        for (let i = 0; i < TeaGlobalContext.smbxBuildinVar.length; i++) {
+            varMap.set(TeaGlobalContext.smbxBuildinVar[i].name, TeaGlobalContext.smbxBuildinVar[i]);
+        }
+        for (let i = 0; i < this.variables.length; i++) {
+            varMap.set(this.variables[i].name, this.variables[i]);
+        }
+        return varMap;
     }
     /**
      * 获取变量
@@ -490,13 +511,14 @@ class TeaBuildinContextDeclare {
  * @param varList 变量列表
  * @returns 
  */
-function createCompletionItemsForVar(varList: TeaVar[]): CompletionItem[] {
+function createCompletionItemsForVar(varList: TeaVar[], startOffset = Number.MAX_VALUE): CompletionItem[] {
     return varList.map(v => {
-        return {
-            label: v.name,
-            kind: CompletionItemKind.Variable,
-            detail: v.toString()
-        };
+        if (v.pos <= startOffset && !v.dotFlag)
+            return {
+                label: v.name,
+                kind: CompletionItemKind.Variable,
+                detail: v.toString()
+            };
     });
 }
 /**
@@ -504,13 +526,14 @@ function createCompletionItemsForVar(varList: TeaVar[]): CompletionItem[] {
  * @param funcList 函数列表
  * @returns 
  */
-function createCompletionItemsForFunc(funcList: TeaFunc[]): CompletionItem[] {
+function createCompletionItemsForFunc(funcList: TeaFunc[], startOffset = Number.MAX_VALUE): CompletionItem[] {
     return funcList.map(func => {
-        return {
-            label: func.name,
-            kind: CompletionItemKind.Function,
-            detail: func.toString()
-        };
+        if (func.pos < startOffset)
+            return {
+                label: func.name,
+                kind: CompletionItemKind.Function,
+                detail: func.toString()
+            };
     }).concat(TeaGlobalContext.smbxBuildinFunc.map(func => {
         return {
             label: func.name,

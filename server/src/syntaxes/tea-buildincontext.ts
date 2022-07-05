@@ -279,13 +279,10 @@ const teaBuildinContext: TeaBuildinContextDeclare = {
         { name: "param1", type: "Sysvar", description: "系统变量 1" },
         { name: "param2", type: "Sysvar", description: "系统变量 2" },
         { name: "param3", type: "Sysvar", description: "系统变量 3" },
-        { name: "Param1", type: "Sysvar", description: "系统变量 1" },
-        { name: "Param2", type: "Sysvar", description: "系统变量 2" },
-        { name: "Param3", type: "Sysvar", description: "系统变量 3" },
 
-        { name: "NCount", type: "Sysvar", description: "现存 NPC 数量" },
-        { name: "BCount", type: "Sysvar", description: "现存砖块数量" },
-        { name: "BGOCount", type: "Sysvar", description: "现存BGO数量" },
+        { name: "nCount", type: "Sysvar", description: "现存 NPC 数量" },
+        { name: "bCount", type: "Sysvar", description: "现存砖块数量" },
+        { name: "bgoCount", type: "Sysvar", description: "现存BGO数量" },
         // 没录完
     ],
 

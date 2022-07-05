@@ -184,7 +184,7 @@
 		},
 		"declare_function": {
 			"name": "meta.function.block",
-			"begin": "((?:\\b(?:(?:E|e)xport)\\s+)?(?:\\b(?:(?:S|s)cript)\\s+))([_a-zA-Z][_a-zA-Z0-9]*)(\\([\\s\\S]*\\))",
+			"begin": "(\\b(?:(?:(?:E|e)xport)\\s+)?(?:\\b(?:(?:S|s)cript)\\s+))([_a-zA-Z][_a-zA-Z0-9]*)(\\([\\s\\S]*\\))",
 			"end": "(\\b(?:(?:E|e)nd)\\s+(?:(?:S|s)cript)\\b)",
 			"beginCaptures": {
 				"0": {
@@ -242,7 +242,7 @@
 		},
 		"declare_params_variable": {
 			"name": "meta.var.declare",
-			"begin": "([_a-zA-Z][_a-zA-Z0-9]*)(\\s+As\\s+)([_a-zA-Z][_a-zA-Z0-9]*)([^,]*)",
+			"begin": "([_a-zA-Z][_a-zA-Z0-9]*)(\\s+(?:A|a)s\\s+)([_a-zA-Z][_a-zA-Z0-9]*)([^,]*)",
 			"end": "\\s*(\\,)",
 			"beginCaptures": {
 				"1": {
@@ -274,7 +274,7 @@
 		},
 		"declare_params_return": {
 			"name": "meta.return",
-			"begin": "\\b(Return)\\s+([_a-zA-Z][_a-zA-Z0-9]*)",
+			"begin": "\\b((?:R|r)eturn)\\s+([_a-zA-Z][_a-zA-Z0-9]*)",
 			"end": "\\)",
 			"beginCaptures": {
 				"1": {

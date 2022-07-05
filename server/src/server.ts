@@ -115,7 +115,7 @@ documents.onDidClose(e => {
 
 connection.onCompletion((docPos: CompletionParams): CompletionItem[] => {
     try {
-        return updateMatch(docPos.textDocument.uri).requestCompletion(docPos.position);
+        return updateMatch(docPos.textDocument.uri)?.requestCompletion(docPos.position);
     }
     catch (ex) {
         console.error(ex);
@@ -125,7 +125,7 @@ connection.onCompletion((docPos: CompletionParams): CompletionItem[] => {
 // 悬停事件
 connection.onHover((params: HoverParams): Promise<Hover> => {
     try {
-        return documentMatch.get(params.textDocument.uri).requestHover(params.position);
+        return documentMatch.get(params.textDocument.uri)?.requestHover(params.position);
     }
     catch (ex) {
         console.error(ex);

@@ -53,7 +53,6 @@ function getObjectType(match: MatchResult, context: TeaContext): TeaType {
 function onExpressionMatch(match: MatchResult) {
     const context = match.matchedScope.state as TeaContext;
     if (match.patternName === "expr-unit") {
-
         if (match.text === ".") {
             GrammarMatchResult.shieldKeywordCompletion = true;
             return context.getAllVariables().map(v => {
@@ -66,8 +65,8 @@ function onExpressionMatch(match: MatchResult) {
             });
         }
 
-        return createCompletionItemsForVar(context.getAllVariables())
-            .concat(createCompletionItemsForFunc(context.global.functions));
+        return createCompletionItemsForVar(context.getAllVariables(), match.startOffset)
+            .concat(createCompletionItemsForFunc(context.global.functions, match.startOffset));
     }
     else if (match.patternName === "operator") {
         if (match.text === ".") {
@@ -147,6 +146,7 @@ const teaGrammarParttern: LanguageGrammar = {
                 "<do-loopw>",
                 "<do-loop>",
                 "<with-structure>",
+                "<select-structure>",
 
                 // ---------- 表达式和跳转
                 "<expression>",
@@ -171,7 +171,9 @@ const teaGrammarParttern: LanguageGrammar = {
                 const type = match.getMatch("type")[0].text;
                 const name = match.getMatch("name")[0].text;
                 const context = match.matchedScope.state as TeaContext;
-                context.addVariable(new TeaVar(context.getType(type), name));
+                const va = new TeaVar(context.getType(type), name);
+                va.pos = match.endOffset;
+                context.addVariable(va);
             },
         },
         // 表达式定义
@@ -216,14 +218,14 @@ const teaGrammarParttern: LanguageGrammar = {
                     ]
                 }
             },
-            onCompletion: onExpressionMatch
+            onCompletion: onExpressionMatch,
         },
         "expression-unstrict": {
             name: "Expression",
+            strict: false,
             patterns: [
                 "<expr-unit> [<operator> <expr-unit> ...]"
             ],
-            crossLine: true,
             dictionary: {
                 "expr-unit": {
                     name: "Expression Unit with Operator",
@@ -275,6 +277,7 @@ const teaGrammarParttern: LanguageGrammar = {
                 "name": GrammarPatternDeclare.Identifier,
             },
             onMatched: (match) => {
+                // console.log(match);
                 const type = getMatchedProps(match, "type");
                 const name = getMatchedProps(match, "name");
                 const func = match.matchedPattern.state as TeaFunc;
@@ -284,7 +287,7 @@ const teaGrammarParttern: LanguageGrammar = {
         // 函数体定义
         "func-definition": {
             name: "Function Definition",
-            patterns: ["[Export] Script <name>([<func-params-declare>][,<func-params-declare>...][,Return <type>]) {block} End Script"],
+            patterns: ["[Export] Script <name>([<func-params-declare>][, <func-params-declare>...][, Return <type>]) {block} End Script"],
             dictionary: {
                 "type": GrammarPatternDeclare.Identifier,
                 "name": GrammarPatternDeclare.Identifier,
@@ -293,8 +296,10 @@ const teaGrammarParttern: LanguageGrammar = {
             onMatched: (match) => {
                 const type = getMatchedProps(match, "type");
                 const name = getMatchedProps(match, "name");
+
                 const context = match.matchedScope.state as TeaContext;
                 const func = new TeaFunc(context.getType(type), name);
+                func.pos = match.startOffset;
                 context.global.addFunction(func);
 
                 const con = new TeaContext();
@@ -424,7 +429,7 @@ const teaGrammarParttern: LanguageGrammar = {
         },
         "for-loop": {
             name: "For Loop",
-            patterns: ["For <func-call-val>=<expression> To <expression> [Step <expression>] [{block}] Next"],
+            patterns: ["For <cond> To <cond> [Step <cond>] [{block}] Next"]
         },
         "dow-loop": {
             name: "Do While Loop",
@@ -455,7 +460,7 @@ const teaGrammarParttern: LanguageGrammar = {
         },
         "select-structure": {
             name: "Select Structure",
-            patterns: ["Select <cond> [{block}] [Case <identifier> [{block}] ...] [Case Else [{block}]] End Select"]
+            patterns: ["Select Case <cond> [{block}] [Case <cond> [{block}] ...] [Case Else [{block}]] End Select"]
         },
 
         // ------------------------------------------- 点操作
@@ -488,14 +493,13 @@ const teaGrammarParttern: LanguageGrammar = {
             name: "Block",
             begin: [""],
             end: [
+                "Next",
                 "End If",
                 "ElseIf",
                 "Else",
                 "End Script",
                 "End With",
-                "Next",
                 "Loop",
-                "End Select",
                 "End Select",
                 "Case Else",
                 "Case"
@@ -511,6 +515,7 @@ const teaGrammarParttern: LanguageGrammar = {
                 includePattern("do-loopw"),
                 includePattern("with-structure"),
                 includePattern("do-loop"),
+                includePattern("select-structure"),
                 {
                     name: "Statement",
                     id: "statement",
@@ -547,7 +552,7 @@ const teaGrammarParttern: LanguageGrammar = {
             }
         },
         "with-block": {
-            name: "Block",
+            name: "With Block",
             begin: [""],
             end: [
                 "End With",
@@ -563,10 +568,20 @@ const teaGrammarParttern: LanguageGrammar = {
                 includePattern("do-loopw"),
                 includePattern("with-structure"),
                 includePattern("do-loop"),
+                includePattern("select-structure"),
                 {
                     name: "Statement",
                     id: "statement",
                     patterns: ["<expression>"]
+                },
+                {
+                    name: "No sense code",
+                    patterns: ["<no-sense>"],
+                    dictionary: {
+                        "no-sense": {
+                            patterns: ["/[_a-zA-Z0-9]+\\r\\n/"]
+                        }
+                    }
                 }
             ],
 
