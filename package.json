@@ -41,12 +41,6 @@
                 "language": "shaderlab",
                 "path": "./snippets/smbxtea.json"
             }
-        ],
-        "commands": [
-            {
-                "command": "test.helloWorld",
-                "title": "Hello World"
-            }
         ]
     },
     "scripts": {
