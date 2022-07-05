@@ -12,6 +12,8 @@
     "activationEvents": [
         "onLanguage:smbxtea"
     ],
+    "publisher": "xiaodouxd",
+    "icon": "res/logo.png",
     "main": "./client/out/extension",
     "contributes": {
         "languages": [
@@ -65,8 +67,5 @@
         "glob": "^8.0.3",
         "mocha": "^10.0.0",
         "typescript": "^4.7.2"
-    },
-    "dependencies": {
-        "update": "^0.7.4"
     }
 }
