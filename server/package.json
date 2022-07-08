@@ -1,6 +1,6 @@
 {
 	"name": "teascript-for-smbx38a-server",
-	"description": "Example implementation of a language server in node.",
+	"description": "language server in node for teascript of SMBX38A coding support.",
 	"version": "1.0.0",
 	"author": "Microsoft Corporation",
 	"license": "MIT",

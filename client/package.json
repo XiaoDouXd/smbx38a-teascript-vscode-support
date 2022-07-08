@@ -1,6 +1,6 @@
 {
 	"name": "teascript-for-smbx38a-client",
-	"description": "VSCode part of a language server",
+	"description": "VSCode part of a language server for teascript of SMBX38A coding support.",
 	"author": "Microsoft Corporation",
 	"license": "MIT",
 	"version": "0.0.1",

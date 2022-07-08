@@ -110,7 +110,7 @@ class TeaVar {
         this.name = name;
     }
     toString() {
-        return `${this.description ? this.description + ": \n" : ''}${this.name} As ${this.type.name}`;
+        return `${this.description ? this.description + ": " : ''}${this.name} As ${this.type.name}`;
     }
 }
 /** 函数描述 */
@@ -161,7 +161,7 @@ class TeaFunc {
         this.parameters.forEach(param => context.addVariable(param));
     }
     toString() {
-        return `${this.description ? this.description + ": \n" : ''}${this.export == false ? "" : "Export"} Script ${this.name}(${this.parameters.map(param => param.toString()).join(", ")} ${this.type.name === "Void" ? "" : `, Return ${this.type.name}`})`;
+        return `${this.description ? this.description + ": \n" : ''}${this.export == false ? "" : "Export"} Script ${this.name}(\n${this.parameters.map(param => param.toString()).join(", \n")} ${this.type.name === "Void" ? "" : `, \nn. 返回: Return ${this.type.name}`}\n)`;
     }
 }
 /** 上下文描述类 */
