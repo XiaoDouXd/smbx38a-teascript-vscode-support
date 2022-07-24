@@ -289,27 +289,16 @@ const teaBuildinContext: TeaBuildinContextDeclare = {
     // 内建函数
     funcs: [
         { name: "BGO", type: "-bgo-return-", params: [{ type: "Integer", name: "id", description: "玩家的id" }], description: "背景设置" },
-        { name: "bgo", type: "-bgo-return-", params: [{ type: "Integer", name: "id", description: "玩家的id" }], description: "背景设置" },
         { name: "BGP", type: "-bgp-return-", params: [{ type: "Integer", name: "id", description: "玩家的id" }], description: "背景分割设置" },
-        { name: "bgp", type: "-bgp-return-", params: [{ type: "Integer", name: "id", description: "玩家的id" }], description: "背景分割设置" },
         { name: "Bitmap", type: "-bitmap-return-", params: [{ type: "Integer", name: "id", description: "玩家的id" }], description: "位图设置" },
-        { name: "bitmap", type: "-bitmap-return-", params: [{ type: "Integer", name: "id", description: "玩家的id" }], description: "位图设置" },
         { name: "Block", type: "-block-return-", params: [{ type: "Integer", name: "id", description: "玩家的id" }], description: "砖块设置" },
-        { name: "block", type: "-block-return-", params: [{ type: "Integer", name: "id", description: "玩家的id" }], description: "砖块设置" },
         { name: "Char", type: "-char-return-", params: [{ type: "Integer", name: "id", description: "玩家的id" }], description: "角色属性设置" },
-        { name: "char", type: "-char-return-", params: [{ type: "Integer", name: "id", description: "玩家的id" }], description: "角色属性设置" },
         { name: "Effect", type: "-effect-return-", params: [{ type: "Integer", name: "id", description: "玩家的id" }], description: "调整 Effect 的属性" },
-        { name: "effect", type: "-effect-return-", params: [{ type: "Integer", name: "id", description: "玩家的id" }], description: "调整 Effect 的属性" },
         { name: "Liquid", type: "-liquid-return-", params: [{ type: "Integer", name: "id", description: "玩家的id" }], description: "调整流场的属性" },
-        { name: "liquid", type: "-liquid-return-", params: [{ type: "Integer", name: "id", description: "玩家的id" }], description: "调整流场的属性" },
         { name: "Lvltimer", type: "-lvltimer-return-", params: [{ type: "Integer", name: "id", description: "玩家的id" }], description: "调整时间系统的属性" },
-        { name: "lvltimer", type: "-lvltimer-return-", params: [{ type: "Integer", name: "id", description: "玩家的id" }], description: "调整时间系统的属性" },
         { name: "NPC", type: "-npc-return-", params: [{ type: "Integer", name: "id", description: "玩家的id" }], description: "调整 NPC 的属性" },
-        { name: "npc", type: "-npc-return-", params: [{ type: "Integer", name: "id", description: "玩家的id" }], description: "调整 NPC 的属性" },
         { name: "Text", type: "-text-return-", params: [{ type: "Integer", name: "id", description: "玩家的id" }], description: "调整文本的属性" },
-        { name: "text", type: "-text-return-", params: [{ type: "Integer", name: "id", description: "玩家的id" }], description: "调整文本的属性" },
         { name: "Warp", type: "-warp-return-", params: [{ type: "Integer", name: "id", description: "玩家的id" }], description: "传送设置" },
-        { name: "warp", type: "-warp-return-", params: [{ type: "Integer", name: "id", description: "玩家的id" }], description: "传送设置" },
 
         {
             name: "BSet", type: "Void", params: [
@@ -322,7 +311,7 @@ const teaBuildinContext: TeaBuildinContextDeclare = {
             ], description: "设置一些 NPC 属性"
         },
         {
-            name: "sysval", type: "Integer", params: [
+            name: "Sysval", type: "Integer", params: [
                 { type: "Sysvar", name: "name" }
             ], description: "系统变量"
         },
@@ -330,22 +319,11 @@ const teaBuildinContext: TeaBuildinContextDeclare = {
             name: "Playnote", type: "Void", params: [{ type: "Integer", name: "command", description: "形如: Volume * 65536 + Flip * 256 + 144 + Channel" }]
         },
         {
-            name: "playnote", type: "Void", params: [{ type: "Integer", name: "command", description: "形如: Volume * 65536 + Flip * 256 + 144 + Channel" }]
-        },
-        {
             name: "TCreate", type: "Void", params: [{ type: "String", name: "eventName", description: "要触发的事件名" }, { type: "Integer", name: "delay", description: "延迟的帧数" }],
             description: "创建事件"
         },
         {
-            name: "tcreate", type: "Void", params: [{ type: "String", name: "eventName", description: "要触发的事件名" }, { type: "Integer", name: "delay", description: "延迟的帧数" }],
-            description: "创建事件"
-        },
-        {
             name: "TClear", type: "Void", params: [{ type: "Integer", name: "flag", description: "清除类型" }, { type: "String", name: "eventName", description: "要删除的事件名" }],
-            description: "删除事件"
-        },
-        {
-            name: "tclear", type: "Void", params: [{ type: "Integer", name: "flag", description: "清除类型" }, { type: "String", name: "eventName", description: "要删除的事件名" }],
             description: "删除事件"
         },
         {
@@ -359,35 +337,7 @@ const teaBuildinContext: TeaBuildinContextDeclare = {
             description: "执行脚本"
         },
         {
-            name: "tcreateEX", type: "Void", params: [
-                { type: "String", name: "name", description: "要执行的脚本" },
-                { type: "String", name: "delay", description: "等待帧" },
-                { type: "Sysvar", name: "param1", description: "传递给 param1 的值" },
-                { type: "Sysvar", name: "param2", description: "传递给 param2 的值" },
-                { type: "Sysvar", name: "param3", description: "传递给 param3 的值" },
-            ],
-            description: "执行脚本"
-        },
-        {
             name: "AudioSet", type: "Void", params: [
-                { type: "Integer", name: "flag", description: "决定该函数起什么效果的参数" },
-                { type: "Integer", name: "sid/fadem", description: "根据 flag 的值该参数的用途会有变化" },
-                { type: "Integer", name: "par/0" },
-                { type: "String", name: "filepath" }
-            ],
-            description: "音效/音乐播放"
-        },
-        {
-            name: "audioset", type: "Void", params: [
-                { type: "Integer", name: "flag", description: "决定该函数起什么效果的参数" },
-                { type: "Integer", name: "sid/fadem", description: "根据 flag 的值该参数的用途会有变化" },
-                { type: "Integer", name: "par/0" },
-                { type: "String", name: "filepath" }
-            ],
-            description: "音效/音乐播放"
-        },
-        {
-            name: "audioSet", type: "Void", params: [
                 { type: "Integer", name: "flag", description: "决定该函数起什么效果的参数" },
                 { type: "Integer", name: "sid/fadem", description: "根据 flag 的值该参数的用途会有变化" },
                 { type: "Integer", name: "par/0" },
@@ -412,69 +362,7 @@ const teaBuildinContext: TeaBuildinContextDeclare = {
             description: "堪称糟糕的设计 无法确定该函数的用途"
         },
         {
-            name: "hudset", type: "Void", params: [
-                { type: "String", name: "command", description: "决定该函数的用途" },
-                { type: "Double", name: "p0" },
-                { type: "Double", name: "p1" },
-                { type: "Double", name: "p2" },
-                { type: "Double", name: "p3" },
-                { type: "Double", name: "p4" },
-                { type: "Double", name: "p5" },
-                { type: "Double", name: "p6" },
-                { type: "Double", name: "p7" },
-                { type: "Double", name: "p8" },
-                { type: "Double", name: "p9" }
-            ],
-            description: "堪称糟糕的设计 无法确定该函数的用途"
-        },
-        {
-            name: "hudSet", type: "Void", params: [
-                { type: "String", name: "command", description: "决定该函数的用途" },
-                { type: "Double", name: "p0" },
-                { type: "Double", name: "p1" },
-                { type: "Double", name: "p2" },
-                { type: "Double", name: "p3" },
-                { type: "Double", name: "p4" },
-                { type: "Double", name: "p5" },
-                { type: "Double", name: "p6" },
-                { type: "Double", name: "p7" },
-                { type: "Double", name: "p8" },
-                { type: "Double", name: "p9" }
-            ],
-            description: "堪称糟糕的设计 无法确定该函数的用途"
-        },
-        {
             name: "TXTCreate", type: "Void", params: [
-                { type: "Integer", name: "id", description: "文本对象的唯一 id" },
-                { type: "Double", name: "x", description: "文本对象的 x 坐标" },
-                { type: "Double", name: "y", description: "文本对象的 y 坐标" },
-                { type: "Byte", name: "sasc", description: "文本对象开始字符的 ASCII 码" },
-                { type: "Byte", name: "easc", description: "文本对象末尾字符的 ASCII 码" },
-                { type: "Integer", name: "cdata", description: "保留参数 设置为 0" },
-                { type: "Integer", name: "lnum", description: "文本对象单行字符数" },
-                { type: "Integer", name: "fontid", description: "用作字体的 npcId" },
-                { type: "Integer", name: "flag", description: "1-以关卡坐标为基准 2-以屏幕坐标为基准" },
-                { type: "String", name: "text", description: "文本内容" }
-            ],
-            description: "创建文本"
-        },
-        {
-            name: "txtcreate", type: "Void", params: [
-                { type: "Integer", name: "id", description: "文本对象的唯一 id" },
-                { type: "Double", name: "x", description: "文本对象的 x 坐标" },
-                { type: "Double", name: "y", description: "文本对象的 y 坐标" },
-                { type: "Byte", name: "sasc", description: "文本对象开始字符的 ASCII 码" },
-                { type: "Byte", name: "easc", description: "文本对象末尾字符的 ASCII 码" },
-                { type: "Integer", name: "cdata", description: "保留参数 设置为 0" },
-                { type: "Integer", name: "lnum", description: "文本对象单行字符数" },
-                { type: "Integer", name: "fontid", description: "用作字体的 npcId" },
-                { type: "Integer", name: "flag", description: "1-以关卡坐标为基准 2-以屏幕坐标为基准" },
-                { type: "String", name: "text", description: "文本内容" }
-            ],
-            description: "创建文本"
-        },
-        {
-            name: "txtCreate", type: "Void", params: [
                 { type: "Integer", name: "id", description: "文本对象的唯一 id" },
                 { type: "Double", name: "x", description: "文本对象的 x 坐标" },
                 { type: "Double", name: "y", description: "文本对象的 y 坐标" },
@@ -512,52 +400,6 @@ const teaBuildinContext: TeaBuildinContextDeclare = {
             description: "创建位图"
         },
         {
-            name: "bmpCreate", type: "Void", params: [
-                { type: "Integer", name: "id", description: "位图唯一 id" },
-                { type: "Integer", name: "picid", description: "作为图源的 npcId" },
-                { type: "Integer", name: "flag", description: "坐标系基准(0 或 1)" },
-                { type: "Integer", name: "visible", description: "可见性(0 或 1)" },
-                { type: "Double", name: "x", description: "x 坐标" },
-                { type: "Double", name: "y", description: "y 坐标" },
-                { type: "Double", name: "sx", description: "图源坐上角点 x 坐标" },
-                { type: "Double", name: "sy", description: "图源坐上角点 y 坐标" },
-                { type: "Double", name: "sw", description: "裁切后位图宽度" },
-                { type: "Double", name: "sh", description: "裁切后位图高度" },
-                { type: "Double", name: "dx", description: "所显示位图 x 坐标" },
-                { type: "Double", name: "dy", description: "所显示位图 y 坐标" },
-                { type: "Double", name: "scx", description: "横向拉伸比" },
-                { type: "Double", name: "scy", description: "纵向拉伸比" },
-                { type: "Double", name: "pcx", description: "变换中心 x 坐标" },
-                { type: "Double", name: "pcy", description: "变换中心 y 坐标" },
-                { type: "Double", name: "angle", description: "旋转角" },
-                { type: "Integer", name: "color", description: "颜色" },
-            ],
-            description: "创建位图"
-        },
-        {
-            name: "bmpcreate", type: "Void", params: [
-                { type: "Integer", name: "id", description: "位图唯一 id" },
-                { type: "Integer", name: "picid", description: "作为图源的 npcId" },
-                { type: "Integer", name: "flag", description: "坐标系基准(0 或 1)" },
-                { type: "Integer", name: "visible", description: "可见性(0 或 1)" },
-                { type: "Double", name: "x", description: "x 坐标" },
-                { type: "Double", name: "y", description: "y 坐标" },
-                { type: "Double", name: "sx", description: "图源坐上角点 x 坐标" },
-                { type: "Double", name: "sy", description: "图源坐上角点 y 坐标" },
-                { type: "Double", name: "sw", description: "裁切后位图宽度" },
-                { type: "Double", name: "sh", description: "裁切后位图高度" },
-                { type: "Double", name: "dx", description: "所显示位图 x 坐标" },
-                { type: "Double", name: "dy", description: "所显示位图 y 坐标" },
-                { type: "Double", name: "scx", description: "横向拉伸比" },
-                { type: "Double", name: "scy", description: "纵向拉伸比" },
-                { type: "Double", name: "pcx", description: "变换中心 x 坐标" },
-                { type: "Double", name: "pcy", description: "变换中心 y 坐标" },
-                { type: "Double", name: "angle", description: "旋转角" },
-                { type: "Integer", name: "color", description: "颜色" },
-            ],
-            description: "创建位图"
-        },
-        {
             name: "BErase", type: "Void", params: [
                 { type: "Integer", name: "flag", description: "决定该函数的用途" },
                 { type: "Integer", name: "id", description: "要释放的对象 id" }
@@ -565,29 +407,7 @@ const teaBuildinContext: TeaBuildinContextDeclare = {
             description: "释放对象"
         },
         {
-            name: "berase", type: "Void", params: [
-                { type: "Integer", name: "flag", description: "决定该函数的用途" },
-                { type: "Integer", name: "id", description: "要释放的对象 id" }
-            ],
-            description: "释放对象"
-        },
-        {
             name: "FXCreate", type: "Void", params: [
-                { type: "Integer", name: "id", description: "特效 id" },
-                { type: "Double", name: "x", description: "x 坐标" },
-                { type: "Double", name: "y", description: "y 坐标" },
-                { type: "Double", name: "sx", description: "x 速度" },
-                { type: "Double", name: "sy", description: "y 速度" },
-                { type: "Integer", name: "f", description: "帧数" },
-                { type: "Double", name: "fs", description: "帧率" },
-                { type: "Double", name: "fc", description: "y 扩展帧" },
-                { type: "Boolean", name: "notg", description: "是否禁用重力" },
-                { type: "Double", name: "advset" }
-            ],
-            description: "创建特效"
-        },
-        {
-            name: "fxcreate", type: "Void", params: [
                 { type: "Integer", name: "id", description: "特效 id" },
                 { type: "Double", name: "x", description: "x 坐标" },
                 { type: "Double", name: "y", description: "y 坐标" },
@@ -611,15 +431,6 @@ const teaBuildinContext: TeaBuildinContextDeclare = {
             description: "图层移动"
         },
         {
-            name: "lmove", type: "Void", params: [
-                { type: "String", name: "name", description: "图层名" },
-                { type: "Double", name: "px", description: "x 参数" },
-                { type: "Double", name: "py", description: "y 参数" },
-                { type: "Integer", name: "flag", description: "移动样式" },
-            ],
-            description: "图层移动"
-        },
-        {
             name: "LSet", type: "Void", params: [
                 { type: "String", name: "name", description: "图层名" },
                 { type: "Integer", name: "flag", description: "图层是否隐藏(0 或 1)" },
@@ -628,24 +439,7 @@ const teaBuildinContext: TeaBuildinContextDeclare = {
             description: "图层可视"
         },
         {
-            name: "lset", type: "Void", params: [
-                { type: "String", name: "name", description: "图层名" },
-                { type: "Integer", name: "flag", description: "图层是否隐藏(0 或 1)" },
-                { type: "Boolean", name: "advset", description: "是否显示烟雾特效" }
-            ],
-            description: "图层可视"
-        },
-        {
             name: "LSpin", type: "Void", params: [
-                { type: "String", name: "name", description: "图层名" },
-                { type: "Double", name: "cx", description: "旋转中心 x 坐标" },
-                { type: "Double", name: "cy", description: "旋转中心 y 坐标" },
-                { type: "Integer", name: "aspeed", description: "旋转速度" },
-            ],
-            description: "图层移动"
-        },
-        {
-            name: "lspin", type: "Void", params: [
                 { type: "String", name: "name", description: "图层名" },
                 { type: "Double", name: "cx", description: "旋转中心 x 坐标" },
                 { type: "Double", name: "cy", description: "旋转中心 y 坐标" },
@@ -663,22 +457,7 @@ const teaBuildinContext: TeaBuildinContextDeclare = {
             description: "创建迭代器"
         },
         {
-            name: "itrcreate", type: "Void", params: [
-                { type: "Integer", name: "type", description: "遍历的对象类型" },
-                { type: "Integer", name: "id", description: "id 过滤" },
-                { type: "Integer", name: "x", description: "起始 x 坐标" },
-                { type: "Integer", name: "y", description: "起始 y 坐标" },
-            ],
-            description: "创建迭代器"
-        },
-        {
             name: "ItrNext", type: "-object-", params: [
-                { type: "Integer", name: "id", description: "读取的迭代器 id" }
-            ],
-            description: "获取迭代器的下一个值 若迭代结束则返回 0"
-        },
-        {
-            name: "itrnext", type: "-object-", params: [
                 { type: "Integer", name: "id", description: "读取的迭代器 id" }
             ],
             description: "获取迭代器的下一个值 若迭代结束则返回 0"
@@ -696,34 +475,7 @@ const teaBuildinContext: TeaBuildinContextDeclare = {
             description: "创建 npc 并返回 npc permID"
         },
         {
-            name: "ncreate", type: "Integer", params: [
-                { type: "Integer", name: "id", description: "npc id" },
-                { type: "Double", name: "x", description: "x 坐标" },
-                { type: "Double", name: "y", description: "y 坐标" },
-                { type: "Double", name: "sx", description: "x 速度" },
-                { type: "Double", name: "sy", description: "y 速度" },
-                { type: "Double", name: "advset" },
-                { type: "Integer", name: "cdata" },
-            ],
-            description: "创建 npc 并返回 npc permID"
-        },
-        {
-            name: "NcreateGroup", type: "Void", params: [
-                { type: "Integer", name: "id", description: "npc id" },
-                { type: "Double", name: "x", description: "区域 x 坐标" },
-                { type: "Double", name: "y", description: "区域 y 坐标" },
-                { type: "Double", name: "RadiusCir", description: "区域半径" },
-                { type: "Double", name: "AngleCir", description: "被生成的 NPC 位在圆上的位置" },
-                { type: "Integer", name: "NPCcount", description: "要生成的 NPC 的数量" },
-                { type: "Double", name: "Angle", description: "Seems to be related to a spawn angle" },
-                { type: "Double", name: "spx", description: "x 速度" },
-                { type: "Double", name: "spy", description: "y 速度" },
-                { type: "Double", name: "Advanced", description: "每个NPC的 advanced 值" },
-            ],
-            description: "批量创建"
-        },
-        {
-            name: "ncreategroup", type: "Void", params: [
+            name: "NCreateGroup", type: "Void", params: [
                 { type: "Integer", name: "id", description: "npc id" },
                 { type: "Double", name: "x", description: "区域 x 坐标" },
                 { type: "Double", name: "y", description: "区域 y 坐标" },
@@ -739,19 +491,6 @@ const teaBuildinContext: TeaBuildinContextDeclare = {
         },
         {
             name: "NKill", type: "Void", params: [
-                { type: "Integer", name: "index", description: "删除样式" },
-                { type: "Double", name: "rx", description: "矩形 x 坐标" },
-                { type: "Double", name: "ry", description: "矩形 y 坐标" },
-                { type: "Double", name: "rw", description: "矩形宽度" },
-                { type: "Double", name: "rh", description: "矩形高度" },
-                { type: "Integer", name: "id", description: "npc id" },
-                { type: "Boolean", name: "effect", description: "显示死亡效果" },
-                { type: "Double", name: "score", description: "计分" },
-            ],
-            description: "杀死 npc"
-        },
-        {
-            name: "nkill", type: "Void", params: [
                 { type: "Integer", name: "index", description: "删除样式" },
                 { type: "Double", name: "rx", description: "矩形 x 坐标" },
                 { type: "Double", name: "ry", description: "矩形 y 坐标" },
@@ -788,19 +527,7 @@ const teaBuildinContext: TeaBuildinContextDeclare = {
             description: "触发特殊事件"
         },
         {
-            name: "spevent", type: "Void", params: [
-                { type: "Integer", name: "id" }
-            ],
-            description: "触发特殊事件"
-        },
-        {
             name: "KeyPress", type: "Integer", params: [
-                { type: "Integer", name: "key-code" }
-            ],
-            description: "当对应 id 的按键按下去后 返回 -1"
-        },
-        {
-            name: "keypress", type: "Integer", params: [
                 { type: "Integer", name: "key-code" }
             ],
             description: "当对应 id 的按键按下去后 返回 -1"
@@ -812,19 +539,7 @@ const teaBuildinContext: TeaBuildinContextDeclare = {
             description: "执行脚本"
         },
         {
-            name: "eXescript", type: "Void", params: [
-                { type: "String", name: "name" }
-            ],
-            description: "执行脚本"
-        },
-        {
             name: "Sleep", type: "Void", params: [
-                { type: "Integer", name: "delay" }
-            ],
-            description: "中断"
-        },
-        {
-            name: "sleep", type: "Void", params: [
                 { type: "Integer", name: "delay" }
             ],
             description: "中断"
@@ -838,21 +553,7 @@ const teaBuildinContext: TeaBuildinContextDeclare = {
             description: "星币值获取"
         },
         {
-            name: "scset", type: "Void", params: [
-                { type: "String", name: "name", description: "关卡名" },
-                { type: "Integer", name: "scID" },
-                { type: "Integer", name: "flag", description: "过滤器" }
-            ],
-            description: "星币值获取"
-        },
-        {
             name: "Debug", type: "Void", params: [
-                { type: "String", name: "logs" }
-            ],
-            description: "输出调试信息"
-        },
-        {
-            name: "debug", type: "Void", params: [
                 { type: "String", name: "logs" }
             ],
             description: "输出调试信息"
@@ -866,20 +567,7 @@ const teaBuildinContext: TeaBuildinContextDeclare = {
             ]
         },
         {
-            name: "RGBA", type: "Integer", params: [
-                { type: "Byte", name: "r" },
-                { type: "Byte", name: "g" },
-                { type: "Byte", name: "b" },
-                { type: "Byte", name: "a" }
-            ]
-        },
-        {
             name: "ShaderSet", type: "Void", params: [
-
-            ]
-        },
-        {
-            name: "shaderset", type: "Void", params: [
 
             ]
         }

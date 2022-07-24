@@ -1034,8 +1034,8 @@ class GrammarPatternDeclare {
 
     /** 模板集 */
     patterns: string[];
-    /** 是否懒惰匹配 */
-    caseInsensitive?: boolean = false;
+    /** 是否忽略大小写 */
+    caseInsensitive?: boolean = true;
     /** 模板声明 */
     dictionary?: PatternDictionary;
     /** 保留空格 */
