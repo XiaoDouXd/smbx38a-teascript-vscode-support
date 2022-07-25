@@ -314,7 +314,7 @@ class TeaGlobalContext extends TeaContext {
     getVariable(name: string): TeaVar {
         let v = linq.from(this.variables).where((variable: TeaVar) => variable.name === name).firstOrDefault();
         if (!v) {
-            v = linq.from(TeaGlobalContext.smbxBuildinVar).where((variable: TeaVar) => variable.name === name).firstOrDefault();
+            v = linq.from(TeaGlobalContext.smbxBuildinVar).where((variable: TeaVar) => variable.name.toLocaleLowerCase() === name.toLocaleLowerCase()).firstOrDefault();
             if (!v)
                 return null;
         }
@@ -335,17 +335,17 @@ class TeaGlobalContext extends TeaContext {
         else if (teaBuildinTypes.indexOf(name) >= 0)
             return new TeaType(name);
 
-        let t = linq.from(this.global.declaredTypes).where((t: TeaType) => t.name === name).firstOrDefault();
+        let t = linq.from(this.global.declaredTypes).where((t: TeaType) => t.name.toLocaleLowerCase() === name.toLocaleLowerCase()).firstOrDefault();
         if (!t) {
-            t = linq.from(TeaGlobalContext.smbxBuildinType).where((t: TeaType) => t.name === name).firstOrDefault();
+            t = linq.from(TeaGlobalContext.smbxBuildinType).where((t: TeaType) => t.name.toLocaleLowerCase() === name.toLocaleLowerCase()).firstOrDefault();
         }
         return t ? t : new TeaType(`${name}?`);
     }
     /** 获得函数 */
     getFunc(name: string): TeaFunc {
-        let v = linq.from(this.functions).where((func: TeaFunc) => func.name === name).firstOrDefault();
+        let v = linq.from(this.functions).where((func: TeaFunc) => func.name.toLocaleLowerCase() === name.toLocaleLowerCase()).firstOrDefault();
         if (!v)
-            v = linq.from(TeaGlobalContext.smbxBuildinFunc).where((func: TeaFunc) => func.name === name).firstOrDefault();
+            v = linq.from(TeaGlobalContext.smbxBuildinFunc).where((func: TeaFunc) => func.name.toLocaleLowerCase() === name.toLocaleLowerCase()).firstOrDefault();
 
         return v ? v : null;
     }
