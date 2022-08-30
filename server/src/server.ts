@@ -95,6 +95,7 @@ connection.onInitialize((params: InitializeParams) => {
 // 完成握手后 客户端会返回 initialized notification 事件
 // 可以使用下面方法设置接收的响应
 connection.onInitialized(() => {
+    console.log("SMBX tea intellisense start.");
     connection.window.showInformationMessage('SMBX tea intellisense start.');
 });
 

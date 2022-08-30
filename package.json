@@ -2,7 +2,7 @@
     "name": "teascript-for-smbx38a",
     "displayName": "Teascript For SMBX38A",
     "description": "Teascript of SMBX38A coding support.",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "engines": {
         "vscode": "^1.68.0"
     },

@@ -277,7 +277,6 @@ const teaGrammarParttern: LanguageGrammar = {
                 "name": GrammarPatternDeclare.Identifier,
             },
             onMatched: (match) => {
-                // console.log(match);
                 const type = getMatchedProps(match, "type");
                 const name = getMatchedProps(match, "name");
                 const func = match.matchedPattern.state as TeaFunc;
@@ -313,15 +312,6 @@ const teaGrammarParttern: LanguageGrammar = {
                     return teaBuildinTypesCompletion;
                 }
                 return [];
-            },
-            onHover: (match) => {
-                const name = getMatchedProps(match.matchedPattern, "name");
-                const context = match.matchedScope.state as TeaContext;
-                if (!context)
-                    return Promise.resolve({ contents: [""], });
-
-                const o = context.global.getFunc(name);
-                return Promise.resolve({ contents: [`${o ? o : ""}`], });
             }
         },
         // 对象调用
@@ -353,15 +343,6 @@ const teaGrammarParttern: LanguageGrammar = {
             patterns: [
                 "<identifier>"
             ]
-            // onHover: (match) => {
-            //     const name = getMatchedProps(match.matchedPattern, "var");
-            //     const context = match.matchedScope.state as TeaContext;
-            //     if (!context)
-            //         return Promise.resolve({ contents: [""], });
-
-            //     const o = context.getVariable(name);
-            //     return Promise.resolve({ contents: [`${o ? o : ""}`], });
-            // }
         },
 
         // ------------------------------------------- 调用定义
@@ -369,7 +350,21 @@ const teaGrammarParttern: LanguageGrammar = {
         "func-call-prefix": {
             name: "Function Call Prefix",
             crossLine: true,
-            patterns: ["Call <identifier>(<expression> [, <expression> ...])"]
+            patterns: ["Call <fname>([<expression>] [, <expression> ...])"],
+            dictionary: {
+                "fname": {
+                    patterns: ["<identifier>"]
+                }
+            },
+            onHover: (match) => {
+                const name = match.text;
+                const context = match.matchedScope.state as TeaContext;
+                if (!context)
+                    return Promise.resolve({ contents: [""], });
+
+                const o = context.global.getFunc(name);
+                return Promise.resolve({ contents: [`${o ? o : ""}`], });
+            }
         },
         // 变量函数调用
         "func-call-val": {

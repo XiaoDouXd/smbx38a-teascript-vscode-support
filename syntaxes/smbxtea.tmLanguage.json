@@ -339,7 +339,7 @@
 					"include": "#keywords"
 				},
 				{
-					"include": "#exprssion"
+					"include": "#expression"
 				}
 			]
 		}
