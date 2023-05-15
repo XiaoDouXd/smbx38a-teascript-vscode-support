@@ -38,7 +38,7 @@ file(GLOB_RECURSE ALL_RES
         sources/*.hpp
         sources/*.c
         sources/*.cpp)
-include_directories(${PROJECT_NAME} source)
+include_directories(source ./source/private)
 add_executable(${PROJECT_NAME} WIN32 ${ALL_RES})
 
 if(WIN32)
