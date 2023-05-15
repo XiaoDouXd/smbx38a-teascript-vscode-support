@@ -186,7 +186,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
     catch (std::exception &e) {
         if (WPopup) DestroyWindow(WPopup);
-        MessageBox(nullptr, "app throw", e.what(), MB_ICONERROR | MB_OK);
+        MessageBox(nullptr, e.what(), "app throw", MB_ICONERROR | MB_OK);
         std::cerr << "application exception: " << e.what();
     }
     return 0;

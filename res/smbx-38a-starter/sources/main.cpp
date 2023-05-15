@@ -1,7 +1,6 @@
 #include <string>
 
-const std::string gameName = "moni";
-const std::string pathToMain = "Mystery of Negaposy Island/Mystery of Negaposy Island.map";
+const std::string gameName = "shadow2d";
+const std::string pathToMain = "main.elvl";
 
 #include "private/main_content.h"
-
