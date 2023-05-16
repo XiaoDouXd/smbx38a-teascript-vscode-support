@@ -38,11 +38,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED true)
 
 # ----------------------------------------------------------- add file
 file(GLOB_RECURSE ALL_RES
-        sources/*.h
-        sources/*.hpp
-        sources/*.c
-        sources/*.cpp)
-include_directories(source ./source/private)
+        src/*.h
+        src/*.hpp
+        src/*.c
+        src/*.cpp)
+include_directories(src ./src/private)
 add_executable(${PROJECT_NAME} WIN32 ${ALL_RES})
 
 if(WIN32)
