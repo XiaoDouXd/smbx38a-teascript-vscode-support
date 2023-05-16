@@ -1,17 +1,21 @@
 cmake_minimum_required(VERSION 3.24.0)
 
-set(VCPKG_TARGET_TRIPLET "x64-windows-static")
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake")
     include(./Config.cmake)
 else()
-    message(WARNING ${XD_PROJECT_NAME} "::CMakeLists::Warning: File ${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake not found, Please create one.")
+    message(WARNING "smbx-38a-starter::CMakeLists::Warning: File ${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake not found, Please create one.")
 endif()
+
+# -------------------------------------------------------------- vcpkg
+set(VCPKG_TARGET_TRIPLET "x64-windows-static")
+set(VCPKG_ROOT "${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake")
 set(CMAKE_TOOLCHAIN_FILE ${CMAKE_TOOLCHAIN_FILE} ${VCPKG_ROOT})
 if (NOT DEFINED VCPKG_ROOT)
-    message(FATAL_ERROR  ${XD_PROJECT_NAME} "::CMakeLists::Error: Vcpkg not found. Please define CMAKE_TOOLCHAIN_FILE var to point the dir to vcpkg.cmake")
+    message(FATAL_ERROR  "smbx-38a-starter::CMakeLists::Error: Vcpkg not found. Please define CMAKE_TOOLCHAIN_FILE var to point the dir to vcpkg.cmake")
 else()
-    message(STATUS ${XD_PROJECT_NAME} "::CMakeLists::Info: Vcpkg - found: ${VCPKG_ROOT}")
+    message(STATUS "smbx-38a-starter::CMakeLists::Info: Vcpkg - found: ${VCPKG_ROOT}")
 endif()
+# --------------------------------------------------------------------
 
 project(smbx-38a-starter)
 
@@ -32,7 +36,7 @@ add_subdirectory(rc)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -static-libstdc++")
+# ----------------------------------------------------------- add file
 file(GLOB_RECURSE ALL_RES
         sources/*.h
         sources/*.hpp
@@ -44,12 +48,26 @@ add_executable(${PROJECT_NAME} WIN32 ${ALL_RES})
 if(WIN32)
     file(GLOB_RECURSE ALL_RC "rc/gen_rc/*.rc")
     target_sources(${PROJECT_NAME} PRIVATE ${ALL_RC})
-endif(WIN32)
+else()
+    message(FATAL_ERROR  "${PROJECT_NAME}::CMakeLists::Error: Unsurportted platform")
+endif()
+# --------------------------------------------------------------------
+
+# ------------------------------------------------------- linking flag
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(CMAKE_EXE_LINKER_FLAGS "-mwindows")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -static-libstdc++")
+    message(STATUS "smbx-38a-starter::CMakeLists::Info: clang config success")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    set(CMAKE_EXE_LINKER_FLAGS "/NODEFAULTLIB:\"LIBCMT.lib\"")
+    message(STATUS "smbx-38a-starter::CMakeLists::Info: msvc config success")
+else()
+    message(FATAL_ERROR  "${PROJECT_NAME}::CMakeLists::Error: Unsurportted complier")
 endif()
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
+# --------------------------------------------------------------------
 
+# ------------------------------------------------------------ add pkg
 find_package(unofficial-minizip CONFIG REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE unofficial::minizip::minizip)
 
@@ -57,3 +75,4 @@ find_package(ZLIB REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC rc)
+# --------------------------------------------------------------------

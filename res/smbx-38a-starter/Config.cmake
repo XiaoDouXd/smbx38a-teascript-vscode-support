@@ -1,3 +1,3 @@
-set(VCPKG_ROOT D:/ProgramData/vcpkg/scripts/buildsystems/vcpkg.cmake)
+set(VCPKG_ROOT D:/ProgramData/vcpkg)
 set(XD_RC_WINDRES_PATH icon)
 set(XD_RC_REGEN OFF)
