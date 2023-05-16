@@ -20,6 +20,7 @@ endif()
 project(smbx-38a-starter)
 
 # -------------------------------------------------------------- 图标
+set(XD_RC_WINDRES_PATH icon)
 if(WIN32 AND DEFINED XD_RC_WINDRES_PATH AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${XD_RC_WINDRES_PATH}")
     set(__RC_WINDRES_PATH_REAL_FULLPATH "${CMAKE_CURRENT_SOURCE_DIR}/${XD_RC_WINDRES_PATH}")
     file (GLOB_RECURSE ALL_RC "${XD_RC_WINDRES_PATH}/*.rc.in")
