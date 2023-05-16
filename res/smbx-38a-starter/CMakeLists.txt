@@ -50,7 +50,7 @@ if(WIN32)
     file(GLOB_RECURSE ALL_RC "rc/gen_rc/*.rc")
     target_sources(${PROJECT_NAME} PRIVATE ${ALL_RC})
 else()
-    message(FATAL_ERROR  "${PROJECT_NAME}::CMakeLists::Error: Unsurportted platform")
+    message(FATAL_ERROR  "${PROJECT_NAME}::CMakeLists::Error: Unsupported platform")
 endif()
 # --------------------------------------------------------------------
 
@@ -63,7 +63,7 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     set(CMAKE_EXE_LINKER_FLAGS "/NODEFAULTLIB:\"LIBCMT.lib\"")
     message(STATUS "smbx-38a-starter::CMakeLists::Info: msvc config success")
 else()
-    message(FATAL_ERROR  "${PROJECT_NAME}::CMakeLists::Error: Unsurportted complier")
+    message(FATAL_ERROR  "${PROJECT_NAME}::CMakeLists::Error: Unsupported compiler")
 endif()
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 # --------------------------------------------------------------------
