@@ -53,12 +53,12 @@ void createTask(const char *content) {
 
     LPCSTR cmd = content;
     CreateProcess(nullptr,
-                  (LPSTR) cmd,
-                  nullptr, nullptr,
-                  FALSE, 0,
-                  nullptr,
-                  nullptr, &startupInfo,
-                  &processInfo);
+                    (LPSTR) cmd,
+                    nullptr, nullptr,
+                    FALSE, 0,
+                    nullptr,
+                    nullptr, &startupInfo,
+                    &processInfo);
 
     WaitForSingleObject(processInfo.hProcess, INFINITE);
     CloseHandle(processInfo.hProcess);
@@ -72,8 +72,7 @@ const auto gameFilePath = "!" + gameName + R"(_data\\worlds\\)" + pathToMain + "
 const auto packTempPath = ".\\\\~" + gameName + "_temp";
 const auto exePath = fs::absolute(fs::path("."));
 
-void openFile()
-{
+void openFile() {
     auto path = fs::absolute(gameFilePath);
     createTask((exePath.string() + "\\\\" + gameRunnerPath + " \"" + path.string() + "\"").c_str());
 }
@@ -182,12 +181,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
         openFile();
         return 0;
-
     }
     catch (std::exception &e) {
         if (WPopup) DestroyWindow(WPopup);
         MessageBox(nullptr, e.what(), "app throw", MB_ICONERROR | MB_OK);
-        std::cerr << "application exception: " << e.what();
+        // std::cerr << "application exception: " << e.what();
     }
     return 0;
 }
