@@ -1,8 +1,0 @@
-{
-    "name": "smbx-38a-starter",
-    "version-string": "0.1.0",
-    "dependencies": [
-        "minizip",
-        "zlib"
-    ]
-}
