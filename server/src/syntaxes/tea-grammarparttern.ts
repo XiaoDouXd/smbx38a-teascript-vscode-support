@@ -49,6 +49,7 @@ function getObjectType(match: MatchResult, context: TeaContext): TeaType {
         return f ? f.type : null;
     }
 }
+
 /** 表达式匹配回调 */
 function onExpressionMatch(match: MatchResult) {
     const context = match.matchedScope.state as TeaContext;

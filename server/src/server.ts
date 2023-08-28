@@ -14,7 +14,9 @@ configure({
     },
     categories: { default: { appenders: ["smbx_tea"], level: "debug" } }
 });
+
 const logger = getLogger("smbx_tea");
+
 import {
     createConnection,
     TextDocuments,
@@ -257,5 +259,3 @@ documents.listen(connection);
 //   }
 //   return item;
 // });
-
-

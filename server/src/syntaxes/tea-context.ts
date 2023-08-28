@@ -65,6 +65,7 @@ class TeaType {
         value.context = null;
         this.members.push(value);
     }
+
     /** 
      * 获取成员
      * @param name 成员名
@@ -75,10 +76,13 @@ class TeaType {
             .firstOrDefault();
     }
 }
+
 /** 数组类型描述 */
 class TeaArray extends TeaType {
     elementTypeName: string;
+
     get elementType() { return this.context.getType(this.elementTypeName); }
+
     constructor(element: string) {
         super(`${element}[]`);
         this.elementTypeName = element;
@@ -109,6 +113,7 @@ class TeaVar {
         this.type = type;
         this.name = name;
     }
+
     toString() {
         return `${this.description ? this.description + ": " : ''}${this.name} As ${this.type.name}`;
     }
@@ -142,6 +147,7 @@ class TeaFunc {
         this.name = name;
         this.parameters = params;
     }
+
     /**
      * 添加参数
      * @param param 变量描述类
@@ -151,6 +157,7 @@ class TeaFunc {
         if (this.functionContext)
             this.functionContext.addVariable(param);
     }
+
     /**
      * 设置函数覆盖的上下文
      * @param context 上下文描述类
@@ -160,6 +167,7 @@ class TeaFunc {
         this.functionContext.global.addContext(context);
         this.parameters.forEach(param => context.addVariable(param));
     }
+
     toString() {
         return `${this.description ? this.description + ": \n" : ''}${this.export == false ? "" : "Export"} Script ${this.name}(\n${this.parameters.map(param => param.toString()).join(", \n")} ${this.type.name === "Void" ? "" : `, \nn. 返回: Return ${this.type.name}`}\n)`;
     }
@@ -185,6 +193,7 @@ class TeaContext {
         context.upper = this;
         context.global = this.global;
     }
+
     /**
      * 添加变量
      * @param variable 待添加的变量
@@ -193,6 +202,7 @@ class TeaContext {
         this.variables.push(variable);
         variable.context = this;
     }
+
     /**
      * 获取变量
      * @param name 变量名
@@ -205,6 +215,7 @@ class TeaContext {
         }
         return v;
     }
+
     /**
      * 获取类型
      * @param name 类型名
@@ -223,9 +234,11 @@ class TeaContext {
         const t = linq.from(this.global.declaredTypes).where((t: TeaType) => t.name === name).firstOrDefault();
         return t ? t : new TeaType(`${name}?`);
     }
+
     getFunc(name: string): TeaFunc {
         return this.global.getFunc(name);
     }
+
     /**
      * 获取所有变量
      * @returns 一个{变量名, 变量描述类}字典
@@ -239,6 +252,7 @@ class TeaContext {
         }
         return varMap;
     }
+
     /**
      * 获取所有变量
      * @returns 变量描述类组
@@ -252,6 +266,7 @@ class TeaContext {
         return varList;
     }
 }
+
 /** 全局上下文描述类 */
 class TeaGlobalContext extends TeaContext {
 
@@ -271,6 +286,7 @@ class TeaGlobalContext extends TeaContext {
         this.declaredTypes = teaBuildinTypes.map(t => new TeaType(t));
         this.global = this;
     }
+
     /**
      * 添加子上下文
      * @param context 待添加的上下文
@@ -278,6 +294,7 @@ class TeaGlobalContext extends TeaContext {
     addContext(context: TeaContext) {
         super.addContext(context);
     }
+
     /**
      * 添加类型
      * @param type 类型描述类
@@ -285,6 +302,7 @@ class TeaGlobalContext extends TeaContext {
     addCustomType(type: TeaType) {
         this.declaredTypes.push(type);
     }
+
     /**
      * 添加函数
      * @param func 函数描述类
@@ -292,6 +310,7 @@ class TeaGlobalContext extends TeaContext {
     addFunction(func: TeaFunc) {
         this.functions.push(func);
     }
+
     /**
      * 获取所有变量
      * @returns 一个{变量名, 变量描述类}字典
@@ -306,6 +325,7 @@ class TeaGlobalContext extends TeaContext {
         }
         return varMap;
     }
+
     /**
      * 获取变量
      * @param name 变量名
@@ -320,6 +340,7 @@ class TeaGlobalContext extends TeaContext {
         }
         return v;
     }
+
     /**
      * 获取类型
      * @param name 类型名
@@ -341,6 +362,7 @@ class TeaGlobalContext extends TeaContext {
         }
         return t ? t : new TeaType(`${name}?`);
     }
+
     /** 获得函数 */
     getFunc(name: string): TeaFunc {
         let v = linq.from(this.functions).where((func: TeaFunc) => func.name?.toLocaleLowerCase() === name?.toLocaleLowerCase()).firstOrDefault();
@@ -349,6 +371,7 @@ class TeaGlobalContext extends TeaContext {
 
         return v ? v : null;
     }
+
     static loadBuildinContext(declare: TeaBuildinContextDeclare) {
         if (TeaGlobalContext._buildinLoaded)
             return;
@@ -474,12 +497,14 @@ class TeaBuildinTypeFieldDeclare {
     /** 详情 */
     description?: string;
 }
+
 class TeaBuildinTypeDeclare {
     /** 类型名 */
     name: string;
     /** 类型字段 */
     field: TeaBuildinTypeFieldDeclare[];
 }
+
 class TeaBuildinFuncDeclare {
     /** 函数名 */
     name: string;
@@ -491,11 +516,13 @@ class TeaBuildinFuncDeclare {
     /** 函数详情 */
     description?: string;
 }
+
 class TeaBuildinVarDeclare {
     name: string;
     type: string;
     description?: string;
 }
+
 class TeaBuildinContextDeclare {
     /** 内建类型 */
     types: TeaBuildinTypeDeclare[];
@@ -521,6 +548,7 @@ function createCompletionItemsForVar(varList: TeaVar[], startOffset = Number.MAX
             };
     });
 }
+
 /**
  * 为函数列表智能补全消息
  * @param funcList 函数列表
@@ -542,6 +570,7 @@ function createCompletionItemsForFunc(funcList: TeaFunc[], startOffset = Number.
         };
     }));
 }
+
 /**
  * 为成员变量创建智能补全消息
  * @param fields 成员
@@ -556,6 +585,7 @@ function createCompletionItemsForMembers(fields: TeaVar[]): CompletionItem[] {
         };
     });
 }
+
 /**
  * 创建智能补全消息
  * @param labels 标签表
