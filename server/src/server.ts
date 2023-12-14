@@ -98,7 +98,7 @@ connection.onInitialize((params: InitializeParams) => {
 // 可以使用下面方法设置接收的响应
 connection.onInitialized(() => {
     console.log("SMBX tea intellisense start.");
-    connection.window.showInformationMessage('SMBX tea intellisense start.');
+    connection.window.showInformationMessage('smbx38a teascript support start.');
 });
 
 // -------------------------------------------------------------- 设置文档事件响应

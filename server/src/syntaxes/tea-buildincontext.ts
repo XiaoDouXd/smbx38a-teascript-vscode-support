@@ -52,7 +52,7 @@ const teaBuildinContext: TeaBuildinContextDeclare = {
                 { name: "desty", type: "Double", description: "Bitmap 在屏幕上的 Y 坐标" },
                 { name: "scalex", type: "Double", description: "X 轴缩放比例" },
                 { name: "scaley", type: "Double", description: "Y 轴缩放比例" },
-                { name: "rotating", type: "Double", description: "Bitmap 的旋转角度" },
+                { name: "rotatang", type: "Double", description: "Bitmap 的旋转角度" },
                 { name: "hide", type: "Double", description: "是否隐藏" },
                 { name: "zpos", type: "Double", description: "z-index 坐标" },
                 { name: "color", type: "Double", description: "颜色参数, 建议用 forecolor" },

@@ -287,7 +287,10 @@ const teaGrammarParttern: LanguageGrammar = {
         // 函数体定义
         "func-definition": {
             name: "Function Definition",
-            patterns: ["[Export] Script <name>([<func-params-declare>][, <func-params-declare>...][, Return <type>]) {block} End Script"],
+            patterns: [
+                "[Export] Script <name>([<func-params-declare>][, <func-params-declare>...][, Return <type>]) {block} End Script",
+                "[Export] Script <name>(Return <type>) {block} End Script"
+            ],
             dictionary: {
                 "type": GrammarPatternDeclare.Identifier,
                 "name": GrammarPatternDeclare.Identifier,

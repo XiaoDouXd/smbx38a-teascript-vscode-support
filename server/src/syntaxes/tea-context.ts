@@ -17,7 +17,7 @@ const keywords = [
     "If", "Else", "ElseIf", "End", "Select",
     "Case", "With", "Export", "Script", "GoTo",
     "GoSub", "Dim", "As", "Next", "For", "Do", "Loop", "While",
-    "Step", "Call"
+    "Step", "Call", "Continue", "Return", "Exit", "Until"
 ];
 
 const teaBuildinTypes = numTypes.concat(txtTypes, otherTypes);
@@ -57,7 +57,7 @@ class TeaType {
         this.members = members;
     }
 
-    /** 
+    /**
      * 添加成员
      * @param value 成员变量
      */
@@ -66,7 +66,7 @@ class TeaType {
         this.members.push(value);
     }
 
-    /** 
+    /**
      * 获取成员
      * @param name 成员名
      */
