@@ -1,15 +1,17 @@
 // ================================================================
-// 构建 smbx teascript 的语法模板
+// 构建 smbx tea script 的语法模板
 // ================================================================
 
 import {
     TeaContext, TeaVar, TeaFunc,
-    teaBuildinTypesCompletion,
+    teaBuiltinTypesCompletion,
     createCompletionItemsForFunc,
     createCompletionItemsForVar,
     TeaGlobalContext,
     TeaType,
-    teaBuildinKeywordCompletion
+    teaBuiltinKeywordCompletion,
+    exportFunc,
+    globalValue
 } from './tea-context';
 import { LanguageGrammar, GrammarPatternDeclare, getMatchedProps, includePattern, MatchResult, PatternMatchResult, GrammarMatchResult } from './meta-grammar';
 import { CompletionItemKind } from 'vscode-languageserver';
@@ -80,7 +82,7 @@ function onExpressionMatch(match: MatchResult) {
             if (!type)
                 return [];
 
-            if (type.orderedMenber) {
+            if (type.orderedMember) {
                 // 排序基数
                 const base = 1000;
                 return type.members.map((member, idx) => {
@@ -109,7 +111,7 @@ function onExpressionMatch(match: MatchResult) {
 // ----------------------------------------------------------------
 
 /** tea 语言的语法模板 */
-const teaGrammarParttern: LanguageGrammar = {
+const teaGrammarPattern: LanguageGrammar = {
     explicitScopeExtreme: false,
     stringDelimiter: ["\""],
     pairMatch: [
@@ -144,7 +146,7 @@ const teaGrammarParttern: LanguageGrammar = {
                 "<if-structure>",
                 "<for-loop>",
                 "<dow-loop>",
-                "<do-loopw>",
+                "<do-loop-w>",
                 "<do-loop>",
                 "<with-structure>",
                 "<select-structure>",
@@ -221,7 +223,7 @@ const teaGrammarParttern: LanguageGrammar = {
             },
             onCompletion: onExpressionMatch,
         },
-        "expression-unstrict": {
+        "expression-un-strict": {
             name: "Expression",
             strict: false,
             patterns: [
@@ -280,8 +282,8 @@ const teaGrammarParttern: LanguageGrammar = {
             onMatched: (match) => {
                 const type = getMatchedProps(match, "type");
                 const name = getMatchedProps(match, "name");
-                const func = match.matchedPattern.state as TeaFunc;
-                func.addParameter(new TeaVar(func.functionContext.getType(type), name));
+                const func = match.matchedPattern?.state as TeaFunc;
+                func?.addParameter(new TeaVar(func.functionContext.getType(type), name));
             }
         },
         // 函数体定义
@@ -302,6 +304,16 @@ const teaGrammarParttern: LanguageGrammar = {
 
                 const context = match.matchedScope.state as TeaContext;
                 const func = new TeaFunc(context.getType(type), name);
+
+                if (/^\s*Export.+/i.test(match.text)) {
+                    let tempList: TeaFunc[] = null;
+                    if (!exportFunc.has(match.document.uri))
+                        exportFunc.set(match.document.uri, tempList = []);
+                    else tempList = exportFunc.get(match.document.uri);
+                    tempList.push(func)
+                    func.export = true;
+                }
+
                 func.pos = match.startOffset;
                 context.global.addFunction(func);
 
@@ -313,14 +325,14 @@ const teaGrammarParttern: LanguageGrammar = {
             },
             onCompletion: (match) => {
                 if (match.patternName === "type") {
-                    return teaBuildinTypesCompletion;
+                    return teaBuiltinTypesCompletion;
                 }
                 return [];
             }
         },
         // 对象调用
         "object": {
-            name: "Objcet",
+            name: "Object",
             crossLine: true,
             patterns: [
                 "<func-call-val>", "<identifier>"
@@ -373,13 +385,24 @@ const teaGrammarParttern: LanguageGrammar = {
         // 变量函数调用
         "func-call-val": {
             name: "Function Call Var",
-            patterns: ["<name>(<expression>)"],
+            patterns: ["<name>(<val>)"],
             dictionary: {
                 "name": {
                     patterns: [
                         "Array", "Val", "GVal"
                     ],
                 },
+                "val": GrammarPatternDeclare.Identifier
+            },
+            onMatched: (match) => {
+                const val = getMatchedProps(match, "val");
+                if (val != null && val != "") {
+                    var tempList: string[] = null;
+                    if (!globalValue.has(match.document.uri))
+                        globalValue.set(match.document.uri, tempList = []);
+                    else tempList = globalValue.get(match.document.uri);
+                    tempList.push(val);
+                }
             }
         },
         // 函数调用
@@ -398,8 +421,7 @@ const teaGrammarParttern: LanguageGrammar = {
             onHover: (match) => {
                 const name = getMatchedProps(match.matchedPattern, "name");
                 const context = match.matchedScope.state as TeaContext;
-                if (!context)
-                    return Promise.resolve({ contents: [""], });
+                if (!context) return Promise.resolve({ contents: [""], });
 
                 const o = context.global.getFunc(name);
                 return Promise.resolve({ contents: [`${o ? o : ""}`], });
@@ -419,8 +441,8 @@ const teaGrammarParttern: LanguageGrammar = {
 
         // ------------------------------------------- 逻辑结构
         "cond": {
-            name: "Condiction",
-            patterns: ["<expression-unstrict>"]
+            name: "Condition",
+            patterns: ["<expression-un-strict>"]
         },
         "if-structure": {
             name: "If Structure",
@@ -434,7 +456,7 @@ const teaGrammarParttern: LanguageGrammar = {
             name: "Do While Loop",
             patterns: ["Do /(While|Until)/ <cond> [{block}] Loop"]
         },
-        "do-loopw": {
+        "do-loop-w": {
             name: "Do Loop While",
             crossLine: true,
             patterns: ["Do [{block}] Loop /(While|Until)/ <cond>"]
@@ -511,7 +533,7 @@ const teaGrammarParttern: LanguageGrammar = {
                 includePattern("if-structure"),
                 includePattern("for-loop"),
                 includePattern("dow-loop"),
-                includePattern("do-loopw"),
+                includePattern("do-loop-w"),
                 includePattern("with-structure"),
                 includePattern("do-loop"),
                 includePattern("select-structure"),
@@ -532,13 +554,13 @@ const teaGrammarParttern: LanguageGrammar = {
             ],
 
             onMatched: (match) => {
-                if (match.matchedPattern.state instanceof TeaFunc) {
-                    const func = match.matchedPattern.state as TeaFunc;
+                if (match.matchedPattern?.state instanceof TeaFunc) {
+                    const func = match.matchedPattern?.state as TeaFunc;
                     match.state = func.functionContext;
                     return;
                 }
                 match.state = new TeaContext();
-                (match.matchedScope.state as TeaContext).addContext(match.state as TeaContext);
+                (match.matchedScope?.state as TeaContext).addContext(match.state as TeaContext);
             },
             onCompletion: (match) => {
                 if (match.matchedPattern.patternName !== "no-sense")
@@ -546,8 +568,8 @@ const teaGrammarParttern: LanguageGrammar = {
                 const context = (match.matchedScope.state as TeaContext);
                 if (!context) return [];
 
-                return teaBuildinTypesCompletion
-                    .concat(teaBuildinKeywordCompletion);
+                return teaBuiltinTypesCompletion
+                    .concat(teaBuiltinKeywordCompletion);
             }
         },
         "with-block": {
@@ -564,7 +586,7 @@ const teaGrammarParttern: LanguageGrammar = {
                 includePattern("if-structure"),
                 includePattern("for-loop"),
                 includePattern("dow-loop"),
-                includePattern("do-loopw"),
+                includePattern("do-loop-w"),
                 includePattern("with-structure"),
                 includePattern("do-loop"),
                 includePattern("select-structure"),
@@ -622,12 +644,12 @@ const teaGrammarParttern: LanguageGrammar = {
                 const context = (match.matchedScope.state as TeaContext);
                 if (!context) return [];
 
-                return teaBuildinTypesCompletion
-                    .concat(teaBuildinKeywordCompletion);
+                return teaBuiltinTypesCompletion
+                    .concat(teaBuiltinKeywordCompletion);
             }
         }
     }
 };
 
 // ----------------------------------------------------------------
-export default teaGrammarParttern;
+export default teaGrammarPattern;

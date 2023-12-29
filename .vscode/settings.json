@@ -18,5 +18,10 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },
-  "eslint.trace.server": "verbose"
+  "eslint.trace.server": "verbose",
+  "cSpell.words": [
+    "linq",
+    "smbx",
+    "teascript"
+  ]
 }

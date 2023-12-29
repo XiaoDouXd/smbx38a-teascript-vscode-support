@@ -27,12 +27,16 @@ import {
     HoverParams,
     Hover,
     CompletionParams,
+    WorkspaceFolder,
+    WorkDoneProgress,
+    CompletionItemKind,
 } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import teaGrammarParttern from './syntaxes/tea-grammarparttern';
-import teaBuildinContext from './syntaxes/tea-buildincontext';
-import { TeaGlobalContext } from './syntaxes/tea-context';
+import teaGrammarPattern from './syntaxes/tea-grammar-pattern';
+import teaBuiltinContext from './syntaxes/tea-builtin-context';
+import { TeaGlobalContext, exportFunc, globalValue } from './syntaxes/tea-context';
 import { matchGrammar, compileGrammar, GrammarMatchResult } from './syntaxes/meta-grammar';
+import linq = require("linq");
 
 // ---------------------------------------------------------------- 初始化连接对象
 
@@ -40,21 +44,26 @@ import { matchGrammar, compileGrammar, GrammarMatchResult } from './syntaxes/met
 // 连接对象对客户端-服务端的信息交互进行了封装
 // 协议中的所有的消息都有封装
 const connection = createConnection(ProposedFeatures.all);
-// 创建文档集合对象，用于映射到实际文档
-const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
-// 创建文档列表
 const documentList = new Map<string, TextDocument>();
+const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 
 // 编译和初始化语法模板
-const compiledTeaGrammar = compileGrammar(teaGrammarParttern);
-TeaGlobalContext.loadBuildinContext(teaBuildinContext);
+const compiledTeaGrammar = compileGrammar(teaGrammarPattern);
+TeaGlobalContext.loadBuiltinContext(teaBuiltinContext);
 const documentMatch = new Map<string, GrammarMatchResult>();
-function updateMatch(uri: string): GrammarMatchResult {
+function getMatch(uri: string, isUpdate: boolean = false): GrammarMatchResult {
     if (!documentList.has(uri))
         return null;
-    documentMatch.set(uri, matchGrammar(compiledTeaGrammar, documentList.get(uri)));
+    if (isUpdate) {
+        exportFunc.delete(uri);
+        globalValue.delete(uri);
+        documentMatch.set(uri, matchGrammar(compiledTeaGrammar, documentList.get(uri)));
+    }
     return documentMatch.get(uri);
 }
+
+// 一些跨文件信息
+const exportCompletionInfos: CompletionItem[] = [];
 
 // ---------------------------------------------------------------- 初始化事件响应
 
@@ -90,7 +99,6 @@ connection.onInitialize((params: InitializeParams) => {
             // documentHighlightProvider: true,
         },
     };
-
     return result;
 });
 
@@ -101,24 +109,52 @@ connection.onInitialized(() => {
     connection.window.showInformationMessage('smbx38a teascript support start.');
 });
 
+// -------------------------------------------------------------- 设置工作区事件响应
+
 // -------------------------------------------------------------- 设置文档事件响应
 documents.onDidOpen(e => {
     documentList.set(e.document.uri, e.document);
     documentMatch.set(e.document.uri, matchGrammar(compiledTeaGrammar, e.document));
+    getMatch(e.document.uri, true);
 });
 
 documents.onDidChangeContent(e => {
-    updateMatch(e.document.uri);
+    exportCompletionInfos.length = 0;
+    getMatch(e.document.uri, true);
+
+    exportFunc.forEach((v, k) => {
+        if (k == e.document.uri) return;
+        v.forEach(i => {
+            exportCompletionInfos.push({
+                label: i.name,
+                kind: CompletionItemKind.Function,
+                detail: i.toString()
+            })
+        })
+    })
+    globalValue.forEach((v, k) => {
+        v.forEach(i => {
+            exportCompletionInfos.push({
+                label: i,
+                kind: CompletionItemKind.Field,
+                detail: "GlobalVar 全局变量",
+            })
+        })
+    })
 });
 
 documents.onDidClose(e => {
+    exportFunc.delete(e.document.uri);
+    globalValue.delete(e.document.uri);
     documentList.delete(e.document.uri);
     documentMatch.delete(e.document.uri);
 });
 
 connection.onCompletion((docPos: CompletionParams): CompletionItem[] => {
     try {
-        return updateMatch(docPos.textDocument.uri)?.requestCompletion(docPos.position);
+        return getMatch(docPos.textDocument.uri)
+            ?.requestCompletion(docPos.position)
+            .concat(exportCompletionInfos);
     }
     catch (ex) {
         console.error(ex);
@@ -208,7 +244,7 @@ documents.listen(connection);
 //     const { textDocument } = params;
 //     const doc = documents.get(textDocument.uri)!;
 //     const text = doc.getText();
-//     const pattern = /\btecvan\b/i;
+//     const pattern = /\b\b/i;
 //     const res: DocumentHighlight[] = [];
 //     let match;
 //     while ((match = pattern.exec(text))) {

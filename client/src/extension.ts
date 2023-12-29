@@ -21,7 +21,6 @@ let client: LanguageClient;
 // 大部分的内容还是要在服务端书写
 export function activate(context: ExtensionContext) {
 
-
     // 启动测试
     console.log("log: smbxtea extension activate!");
 
@@ -49,7 +48,7 @@ export function activate(context: ExtensionContext) {
         documentSelector: [{ scheme: 'file', language: 'smbxtea' }],
         synchronize: {
             // Notify the server about file changes to '.clientrc files contained in the workspace
-            fileEvents: workspace.createFileSystemWatcher('**/.clientrc')
+            fileEvents: [workspace.createFileSystemWatcher('**/.clientrc')]
         }
     };
 

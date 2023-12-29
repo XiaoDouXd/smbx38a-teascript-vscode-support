@@ -2,7 +2,7 @@
 // smbx teascript 内建类型和函数的预设
 // ================================================================
 
-import { TeaBuildinContextDeclare } from './tea-context';
+import { TeaBuiltinContextDeclare } from './tea-context';
 
 // ---------------------------------------------------------------- 内建变量和类型
 // 因为一些特殊原因, 基本变量和关键字的声明放在 tea-context.ts 中
@@ -13,7 +13,7 @@ import { TeaBuildinContextDeclare } from './tea-context';
 // 所以同样的函数和变量可以用不同的大小写模式多写几个
 
 /** 内建变量声明 */
-const teaBuildinContext: TeaBuildinContextDeclare = {
+const teaBuiltinContext: TeaBuiltinContextDeclare = {
     // 内建类型
     types: [
         {
@@ -574,4 +574,4 @@ const teaBuildinContext: TeaBuildinContextDeclare = {
     ]
 };
 
-export default teaBuildinContext;
+export default teaBuiltinContext;

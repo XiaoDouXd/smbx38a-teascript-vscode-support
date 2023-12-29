@@ -5,7 +5,8 @@
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Position, CompletionItem, Diagnostic, Hover } from 'vscode-languageserver/node';
 import { NoParamCallback } from 'fs';
-import { teaBuildinKeywordCompletion, teaBuildinTypesCompletion } from './tea-context';
+import { teaBuiltinKeywordCompletion, teaBuiltinTypesCompletion } from './tea-context';
+import { log } from 'console';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const linq = require('linq');
@@ -575,14 +576,14 @@ class Grammar extends ScopePattern {
             match.startOffset = 0;
             while (startOffset != end) {
                 let hasMatched = false;
-                let failedMathes: MatchResult[] = [];
+                let failedMatches: MatchResult[] = [];
                 for (let i = 0; i < this.subPatterns.length; i++) {
                     const subMatch = this.subPatterns[i].match(doc, startOffset);
                     if (!subMatch.matched) {
-                        failedMathes.push(subMatch);
+                        failedMatches.push(subMatch);
                         continue;
                     }
-                    failedMathes = [];
+                    failedMatches = [];
                     hasMatched = true;
                     match.addChildren(subMatch);
                     match.endOffset = startOffset = subMatch.endOffset;
@@ -591,8 +592,8 @@ class Grammar extends ScopePattern {
                 }
 
                 if (!hasMatched) {
-                    const unMatched = new UnMatchedText(doc, this.scope, failedMathes);
-                    failedMathes = [];
+                    const unMatched = new UnMatchedText(doc, this.scope, failedMatches);
+                    failedMatches = [];
                     unMatched.startOffset = startOffset;
                     match.addChildren(unMatched);
 
@@ -709,8 +710,7 @@ class MatchResult {
         const offset = this.document.offsetAt(pos);
 
         // 当前段落不包含该位置
-        if (offset < this.startOffset || this.endOffset < offset)
-            return null;
+        if (offset < this.startOffset || this.endOffset < offset) return this;
 
         // 当前段落为最小段落
         if (this.children.length <= 0)
@@ -729,7 +729,7 @@ class MatchResult {
 class PatternMatchResult extends MatchResult {
     private _matchesList: MatchResult[] = null;
 
-    private get allMathches(): MatchResult[] {
+    private get allMatches(): MatchResult[] {
         if (this.children.length <= 0)
             return [];
         if (!this._matchesList) {
@@ -751,7 +751,7 @@ class PatternMatchResult extends MatchResult {
         if (this.children.length <= 0)
             return null;
 
-        return linq.from(this.allMathches).where((match: MatchResult) => match.patternName === name).toArray();
+        return linq.from(this.allMatches).where((match: MatchResult) => match.patternName === name).toArray();
 
     }
 
@@ -759,7 +759,7 @@ class PatternMatchResult extends MatchResult {
         if (this.pattern.onMatched)
             this.pattern.onMatched(this);
 
-        this.allMathches.forEach(match => {
+        this.allMatches.forEach(match => {
             if (match != this) {
                 match.matchedScope = this.matchedScope;
                 match.matchedPattern = this;
@@ -819,7 +819,6 @@ class ScopeMatchResult extends MatchResult {
 class GrammarMatchResult extends ScopeMatchResult {
 
     static shieldKeywordCompletion = false;
-    private static _toignoreComment = false;
 
     grammar: LanguageGrammar;
     constructor(doc: TextDocument, grammar: Grammar) {
@@ -829,33 +828,29 @@ class GrammarMatchResult extends ScopeMatchResult {
 
     requestCompletion(pos: Position): CompletionItem[] {
         let completions: CompletionItem[] = [];
-
         // 获得当前光标位置
         GrammarMatchResult.shieldKeywordCompletion = false;
-        GrammarMatchResult._toignoreComment = false;
 
-        const match = this.locateMatchAtPosition(pos);
-        if (!match)
-            return [];
-        if (!match.matched)
-            GrammarMatchResult._toignoreComment = true;
+        let match = this.locateMatchAtPosition(pos);
+        if (!match) return completions;
 
-        if (match instanceof UnMatchedPattern) {
+        if (match instanceof UnMatchedPattern)
             completions = completions.concat(match.requestCompletion(pos));
-        }
-        if (match instanceof UnMatchedText) {
+        else if (match instanceof UnMatchedText)
             completions = completions.concat(match.requestCompletion(pos));
-        }
         else if (match instanceof GrammarMatchResult) {
             completions = match.grammar.onCompletion ?
                 completions.concat(match.grammar.onCompletion(match)) :
                 completions;
+            GrammarMatchResult.shieldKeywordCompletion = true;
         }
         else if (match instanceof ScopeMatchResult) {
             completions = (match.scope && match.scope.onCompletion) ?
                 completions.concat(match.scope.onCompletion(match)) :
                 completions;
+            GrammarMatchResult.shieldKeywordCompletion = true;
         }
+
         for (let matchP = match; matchP != null; matchP = matchP.parent) {
             if (matchP instanceof PatternMatchResult && matchP.pattern.onCompletion) {
                 completions = completions.concat(matchP.pattern.onCompletion(matchP));
@@ -872,11 +867,7 @@ class GrammarMatchResult extends ScopeMatchResult {
             }
         }
 
-        if (!GrammarMatchResult.shieldKeywordCompletion) {
-            if (GrammarMatchResult._toignoreComment)
-                return [];
-            completions = completions.concat(teaBuildinTypesCompletion).concat(teaBuildinKeywordCompletion);
-        }
+        if (!GrammarMatchResult.shieldKeywordCompletion) completions = completions.concat(teaBuiltinTypesCompletion).concat(teaBuiltinKeywordCompletion);
         completions = linq.from(completions)
             .where((item: CompletionItem) => item !== undefined)
             .distinct((comp: CompletionItem) => comp.label)
@@ -943,19 +934,15 @@ class UnMatchedText extends MatchResult {
 
     requestCompletion(pos: Position): CompletionItem[] {
         let completions: CompletionItem[] = [];
+
         this.allMatches.forEach(match => {
-            const endMatch = match.locateMatchAtPosition(pos);
-            if (!endMatch)
-                return;
-            if (match instanceof UnMatchedPattern) {
-                completions = completions.concat(match.requestCompletion(pos));
-            }
-            if (endMatch instanceof UnMatchedText) {
-                completions = completions.concat(endMatch.requestCompletion(pos));
-            }
+            let endMatch = match.locateMatchAtPosition(pos);
+            if (!endMatch) return;
+            if (match instanceof UnMatchedPattern) completions = completions.concat(match.requestCompletion(pos));
+            if (endMatch instanceof UnMatchedText) completions = completions.concat(endMatch.requestCompletion(pos));
+
             for (let matchP = endMatch; matchP != this; matchP = matchP.parent) {
-                if (!matchP.patternName)
-                    continue;
+                if (!matchP.patternName) continue;
                 if (matchP.unmatchedPattern && matchP.unmatchedPattern.pattern.onCompletion) {
                     const comps = matchP.unmatchedPattern.pattern.onCompletion(matchP);
                     completions = completions.concat(comps);
@@ -1160,7 +1147,7 @@ class LanguageGrammar {
  * @param pattern 分析使用的语法模板
  * @return 匹配模板
  */
-function analyseBracketItem(item: string, pattern: GrammarPatternDeclare): PatternItem {
+function analyzeBracketItem(item: string, pattern: GrammarPatternDeclare): PatternItem {
     const buildInPattern: PatternItemDictionary = {
         "string": (pt: GrammarPatternDeclare) => new StringPattern(pt),
         "number": (pt: GrammarPatternDeclare) => new NumberPattern(pt),
@@ -1208,7 +1195,7 @@ function analyseBracketItem(item: string, pattern: GrammarPatternDeclare): Patte
         }
 
         // 中间部分拿去做模板分析
-        const subPattern = analysePatternItem(item, pattern);
+        const subPattern = analyzePatternItem(item, pattern);
 
         // 可忽略、可重复
         subPattern.ignorable = true;
@@ -1227,7 +1214,7 @@ function analyseBracketItem(item: string, pattern: GrammarPatternDeclare): Patte
         else if (pattern.grammar.scopeRepository && pattern.grammar.scopeRepository[name])
             scope = pattern.grammar.scopeRepository[name];
         if (!scope)
-            throw new Error("meta-grammar.analyseBracketItem.error: 该模板域未定义");
+            throw new Error("meta-grammar.analyzeBracketItem.error: 该模板域未定义");
 
         // 保存信息并整理
         scope.grammar = pattern.grammar;
@@ -1245,7 +1232,7 @@ function analyseBracketItem(item: string, pattern: GrammarPatternDeclare): Patte
     }
 
     throw new Error(
-        "meta-grammar.analyseBracketItem.error: 模板括号分析时发现语法错误, " +
+        "meta-grammar.analyzeBracketItem.error: 模板括号分析时发现语法错误, " +
         "涉及模板名: " + pattern?.name
     );
 }
@@ -1256,7 +1243,7 @@ function analyseBracketItem(item: string, pattern: GrammarPatternDeclare): Patte
  * @param pattern 分析使用的语法模板
  * @returns 匹配模板
  */
-function analysePatternItem(item: string, pattern: GrammarPatternDeclare): PatternItem {
+function analyzePatternItem(item: string, pattern: GrammarPatternDeclare): PatternItem {
     // 一些重要元符号
     const bracketStart = ["<", "[", "{", "/"];
     const bracketEnd = [">", "]", "}", "/"];
@@ -1323,7 +1310,7 @@ function analysePatternItem(item: string, pattern: GrammarPatternDeclare): Patte
             // 若当前字符是结束括号
             else if (isBracketEnd(item[i]))
                 throw new Error(
-                    "meta-grammar.analysePatternItem.error: 闭合括号找不到对应的开始括号, " +
+                    "meta-grammar.analyzePatternItem.error: 闭合括号找不到对应的开始括号, " +
                     "涉及模板名: " + pattern?.name
                 );
 
@@ -1352,7 +1339,7 @@ function analysePatternItem(item: string, pattern: GrammarPatternDeclare): Patte
                 bracketDepth--;
                 // 若当前层读取完了, 递归解析该括号内的内容
                 if (bracketDepth === 0) {
-                    patternItem.addSubPattern(analyseBracketItem(words, pattern));
+                    patternItem.addSubPattern(analyzeBracketItem(words, pattern));
                     words = "";
                     // 回到分词状态
                     state = State.CollectWords;
@@ -1372,14 +1359,14 @@ function analysePatternItem(item: string, pattern: GrammarPatternDeclare): Patte
     // 若括号没闭合, 报错
     else if (state === State.MatchBracket && bracketDepth > 0)
         throw new Error(
-            "meta-grammar.analysePatternItem.error: 模板括号未闭合, " +
+            "meta-grammar.analyzePatternItem.error: 模板括号未闭合, " +
             "涉及模板名: " + pattern?.name
         );
 
     // 若依序组模板组无结果
     if (patternItem.subPatterns.length === 0)
         throw new Error(
-            "meta-grammar.analysePatternItem.error: 模板无内容, " +
+            "meta-grammar.analyzePatternItem.error: 模板无内容, " +
             "涉及模板名: " + pattern?.name
         );
 
@@ -1412,7 +1399,7 @@ function compilePattern(pattern: GrammarPatternDeclare): PatternItem {
     pattern.compiledPattern = patternList;
     pattern.patterns.forEach(pt => {
         // 子模板
-        const subPattern = analysePatternItem(pt, pattern);
+        const subPattern = analyzePatternItem(pt, pattern);
         subPattern.strict = pattern.strict ? true : false;
         subPattern.ignorable = true;
         patternList.addSubPattern(subPattern);
@@ -1420,7 +1407,7 @@ function compilePattern(pattern: GrammarPatternDeclare): PatternItem {
 
     if (patternList.count === 0)
         throw new Error(
-            "meta-grammar.analysePatternItem.error: 模板无内容, " +
+            "meta-grammar.analyzePatternItem.error: 模板无内容, " +
             "涉及模板名: " + pattern?.name
         );
 
@@ -1428,7 +1415,7 @@ function compilePattern(pattern: GrammarPatternDeclare): PatternItem {
     if (patternList.count === 1) {
         if (patternList.subPatterns[0] == patternList)
             throw new Error(
-                "meta-grammar.analysePatternItem.error: 模板发生了循环定义, " +
+                "meta-grammar.analyzePatternItem.error: 模板发生了循环定义, " +
                 "涉及模板名: " + pattern?.name
             );
         // 一些其它设置
@@ -1478,7 +1465,7 @@ function compileScope(scope: GrammarScopeDeclare, pattern: GrammarPatternDeclare
         if (!scope.grammar?.explicitScopeExtreme) {
             if (patternList.name === subPattern.name)
                 throw new Error(
-                    "meta-grammar.analysePatternItem.error: 在无端点域模板中发生了嵌套, " +
+                    "meta-grammar.analyzePatternItem.error: 在无端点域模板中发生了嵌套, " +
                     "涉及模板名: " + pattern?.name
                 );
         }
@@ -1517,7 +1504,7 @@ function compileGrammar(grammarDeclare: LanguageGrammar): Grammar {
  * 匹配语法
  * @param grammar 语法模板
  * @param doc 文本
- * @returns 
+ * @returns
  */
 function matchGrammar(grammar: Grammar, doc: TextDocument): GrammarMatchResult {
     return grammar.match(doc, 0);
