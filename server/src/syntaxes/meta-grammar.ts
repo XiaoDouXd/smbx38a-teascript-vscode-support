@@ -3,7 +3,7 @@
 // ================================================================
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { Position, CompletionItem, Diagnostic, Hover } from 'vscode-languageserver/node';
+import { Position, CompletionItem, Diagnostic, Hover, CompletionParams } from 'vscode-languageserver/node';
 import { NoParamCallback } from 'fs';
 import { teaBuiltinKeywordCompletion, teaBuiltinTypesCompletion } from './tea-context';
 import { log } from 'console';
@@ -11,12 +11,14 @@ import { log } from 'console';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const linq = require('linq');
 
+type EmptyAction = () => void;
 type DocumentCompletionCallback = (match: MatchResult) => CompletionItem[];
 type DocumentHoverCallback = (match: MatchResult) => Promise<Hover>;
 type PatternMatchedCallback = (patternMatch: PatternMatchResult) => void;
 type ScopeMatchedCallback = (scopeMatch: ScopeMatchResult) => void;
 type DocumentDiagnoseCallback = (unMatched: UnMatchedText) => Diagnostic[];
 type PatternItemDictionary = { [key: string]: (pattern: GrammarPatternDeclare) => PatternItem };
+type CompletionPostProcessing = (items: CompletionItem[], params: CompletionParams) => CompletionItem[];
 
 // ----------------------------------------------------------------
 /** 匹配模板基类: 是所有词汇、段落捕获模板的基类 */
@@ -818,6 +820,10 @@ class ScopeMatchResult extends MatchResult {
 /** 语法匹配结果 */
 class GrammarMatchResult extends ScopeMatchResult {
 
+    static initCallback: EmptyAction = null;
+    static completionPostProcessing: CompletionPostProcessing = null;
+
+    static disable = false;
     static shieldKeywordCompletion = false;
 
     grammar: LanguageGrammar;
@@ -826,18 +832,28 @@ class GrammarMatchResult extends ScopeMatchResult {
         this.grammar = grammar.grammar;
     }
 
-    requestCompletion(pos: Position): CompletionItem[] {
+    requestCompletion(pos: CompletionParams): CompletionItem[] {
+        if (GrammarMatchResult.initCallback != null)
+            GrammarMatchResult.initCallback();
+
+        return GrammarMatchResult.completionPostProcessing
+            ? GrammarMatchResult.completionPostProcessing(this.requestCompletionInner(pos), pos)
+            : this.requestCompletionInner(pos);
+    }
+
+    private requestCompletionInner(pos: CompletionParams): CompletionItem[] {
         let completions: CompletionItem[] = [];
         // 获得当前光标位置
+        GrammarMatchResult.disable = false;
         GrammarMatchResult.shieldKeywordCompletion = false;
 
-        let match = this.locateMatchAtPosition(pos);
+        let match = this.locateMatchAtPosition(pos.position);
         if (!match) return completions;
 
         if (match instanceof UnMatchedPattern)
-            completions = completions.concat(match.requestCompletion(pos));
+            completions = completions.concat(match.requestCompletion(pos.position));
         else if (match instanceof UnMatchedText)
-            completions = completions.concat(match.requestCompletion(pos));
+            completions = completions.concat(match.requestCompletion(pos.position));
         else if (match instanceof GrammarMatchResult) {
             completions = match.grammar.onCompletion ?
                 completions.concat(match.grammar.onCompletion(match)) :
@@ -851,6 +867,7 @@ class GrammarMatchResult extends ScopeMatchResult {
             GrammarMatchResult.shieldKeywordCompletion = true;
         }
 
+        if (GrammarMatchResult.disable) return [];
         for (let matchP = match; matchP != null; matchP = matchP.parent) {
             if (matchP instanceof PatternMatchResult && matchP.pattern.onCompletion) {
                 completions = completions.concat(matchP.pattern.onCompletion(matchP));
@@ -859,15 +876,20 @@ class GrammarMatchResult extends ScopeMatchResult {
                 continue;
             if (matchP.matchedPattern && matchP.matchedPattern.pattern.onCompletion) {
                 const comps = matchP.matchedPattern.pattern.onCompletion(matchP);
+                if (GrammarMatchResult.disable) return [];
                 completions = completions.concat(comps);
             }
             if (matchP.matchedScope && matchP.matchedScope.scope.onCompletion) {
                 const comps = matchP.matchedScope.scope.onCompletion(matchP);
+                if (GrammarMatchResult.disable) return [];
                 completions = completions.concat(comps);
             }
         }
 
-        if (!GrammarMatchResult.shieldKeywordCompletion) completions = completions.concat(teaBuiltinTypesCompletion).concat(teaBuiltinKeywordCompletion);
+        if (GrammarMatchResult.disable) return [];
+
+        if (!GrammarMatchResult.shieldKeywordCompletion)
+            completions = completions.concat(teaBuiltinTypesCompletion).concat(teaBuiltinKeywordCompletion(pos));
         completions = linq.from(completions)
             .where((item: CompletionItem) => item !== undefined)
             .distinct((comp: CompletionItem) => comp.label)

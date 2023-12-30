@@ -15,8 +15,22 @@ import {
 } from './tea-context';
 import { LanguageGrammar, GrammarPatternDeclare, getMatchedProps, includePattern, MatchResult, PatternMatchResult, GrammarMatchResult } from './meta-grammar';
 import { CompletionItemKind } from 'vscode-languageserver';
+import { match } from 'assert';
 
 // ----------------------------------------------------------------
+
+let isInDim = false;
+let isInBlock = false;
+
+GrammarMatchResult.initCallback = () => {
+    isInDim = false;
+    isInBlock = false;
+}
+
+GrammarMatchResult.completionPostProcessing = (items, params) => {
+    if (isInDim && !isInBlock) return teaBuiltinKeywordCompletion(params);
+    else return items;
+}
 
 /** 获得对象类型 */
 function getObjectType(match: MatchResult, context: TeaContext): TeaType {
@@ -53,7 +67,7 @@ function getObjectType(match: MatchResult, context: TeaContext): TeaType {
 }
 
 /** 表达式匹配回调 */
-function onExpressionMatch(match: MatchResult) {
+function onExpressionCompletion(match: MatchResult) {
     const context = match.matchedScope.state as TeaContext;
     if (match.patternName === "expr-unit") {
         if (match.text === ".") {
@@ -221,7 +235,7 @@ const teaGrammarPattern: LanguageGrammar = {
                     ]
                 }
             },
-            onCompletion: onExpressionMatch,
+            onCompletion: onExpressionCompletion,
         },
         "expression-un-strict": {
             name: "Expression",
@@ -264,7 +278,7 @@ const teaGrammarPattern: LanguageGrammar = {
                     ]
                 }
             },
-            onCompletion: onExpressionMatch
+            onCompletion: onExpressionCompletion
         },
         // 括号表达式定义
         "bracket": {
@@ -299,6 +313,7 @@ const teaGrammarPattern: LanguageGrammar = {
             },
             crossLine: true,
             onMatched: (match) => {
+                isInDim = true
                 const type = getMatchedProps(match, "type");
                 const name = getMatchedProps(match, "name");
 
@@ -385,7 +400,7 @@ const teaGrammarPattern: LanguageGrammar = {
         // 变量函数调用
         "func-call-val": {
             name: "Function Call Var",
-            patterns: ["<name>(<val>)"],
+            patterns: ["<name>(<val>)", "Array(<val>(<expression>))"],
             dictionary: {
                 "name": {
                     patterns: [
@@ -403,6 +418,10 @@ const teaGrammarPattern: LanguageGrammar = {
                     else tempList = globalValue.get(match.document.uri);
                     tempList.push(val);
                 }
+            },
+            onCompletion: (match) => {
+                GrammarMatchResult.shieldKeywordCompletion = true;
+                return [];
             }
         },
         // 函数调用
@@ -425,6 +444,10 @@ const teaGrammarPattern: LanguageGrammar = {
 
                 const o = context.global.getFunc(name);
                 return Promise.resolve({ contents: [`${o ? o : ""}`], });
+            },
+            onCompletion: (match) => {
+                GrammarMatchResult.shieldKeywordCompletion = true;
+                return [];
             }
         },
         // goto 语句
@@ -442,11 +465,15 @@ const teaGrammarPattern: LanguageGrammar = {
         // ------------------------------------------- 逻辑结构
         "cond": {
             name: "Condition",
-            patterns: ["<expression-un-strict>"]
+            patterns: ["<expression-un-strict>"],
+            onCompletion: (match) => {
+                GrammarMatchResult.shieldKeywordCompletion = true;
+                return [];
+            }
         },
         "if-structure": {
             name: "If Structure",
-            patterns: ["If <cond> Then [{block}] [ElseIf <cond> Then [{block}] ...] [Else [{block}]] End If"]
+            patterns: ["If <cond> Then [{block}] [ElseIf <cond> Then [{block}] ...] [Else [{block}]] End If"],
         },
         "for-loop": {
             name: "For Loop",
@@ -563,13 +590,14 @@ const teaGrammarPattern: LanguageGrammar = {
                 (match.matchedScope?.state as TeaContext).addContext(match.state as TeaContext);
             },
             onCompletion: (match) => {
+                isInBlock = true;
+                GrammarMatchResult.shieldKeywordCompletion = false;
                 if (match.matchedPattern.patternName !== "no-sense")
                     return [];
                 const context = (match.matchedScope.state as TeaContext);
                 if (!context) return [];
 
-                return teaBuiltinTypesCompletion
-                    .concat(teaBuiltinKeywordCompletion);
+                return teaBuiltinTypesCompletion;
             }
         },
         "with-block": {
@@ -639,13 +667,14 @@ const teaGrammarPattern: LanguageGrammar = {
                 });
             },
             onCompletion: (match) => {
+                isInBlock = true;
+                GrammarMatchResult.shieldKeywordCompletion = false;
                 if (match.matchedPattern.patternName !== "no-sense")
                     return [];
                 const context = (match.matchedScope.state as TeaContext);
                 if (!context) return [];
 
-                return teaBuiltinTypesCompletion
-                    .concat(teaBuiltinKeywordCompletion);
+                return teaBuiltinTypesCompletion;
             }
         }
     }

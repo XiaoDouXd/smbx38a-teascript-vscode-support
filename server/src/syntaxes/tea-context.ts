@@ -3,7 +3,7 @@
 // ================================================================
 
 import { type } from 'os';
-import { CompletionItem, CompletionItemKind, InsertTextFormat, InsertTextMode, Position } from 'vscode-languageserver';
+import { CompletionItem, CompletionItemKind, CompletionParams, InsertTextFormat, InsertTextMode, Position, TextEdit } from 'vscode-languageserver';
 import { matchGrammar, MatchResult } from './meta-grammar';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -14,43 +14,93 @@ const numTypes = ["Integer", "Double", "Byte", "Long"];
 const txtTypes = ["String"];
 const otherTypes = ["Boolean", "Void"];
 const keywords = [
-    "Then", "Else", "ElseIf", "End", "Select",
-    "Case", "With", "Script", "GoTo",
-    "GoSub", "Dim", "As", "Next", "For", "Do", "Loop", "While",
-    "Step", "Call", "Continue", "Return", "Exit", "Until"
+    "Then", "End",
+    "Case", "GoTo",
+    "GoSub", "As", "Next", "Loop", "While",
+    "Step", "Continue", "Return", "Exit", "Until", "Call"
 ];
-const keywordComplex: CompletionItem[] = [{
-    label: "If",
-    kind: CompletionItemKind.Keyword,
-    insertText: "If Then\n    \nEnd If",
-    insertTextMode: InsertTextMode.adjustIndentation,
-    insertTextFormat: InsertTextFormat.Snippet
-}, {
-    label: "GVal",
-    kind: CompletionItemKind.Keyword,
-    insertText: "GVal()",
-    insertTextMode: InsertTextMode.adjustIndentation,
-    insertTextFormat: InsertTextFormat.Snippet
-}, {
-    label: "Val",
-    kind: CompletionItemKind.Keyword,
-    insertText: "Val()",
-    insertTextMode: InsertTextMode.adjustIndentation,
-    insertTextFormat: InsertTextFormat.Snippet
-}, {
-    label: "Array",
-    kind: CompletionItemKind.Keyword,
-    insertText: "Array()",
-    insertTextMode: InsertTextMode.adjustIndentation,
-    insertTextFormat: InsertTextFormat.Snippet
-}, {
-    label: "Export",
-    kind: CompletionItemKind.Keyword,
-    insertText: "Export Script ",
-    insertTextMode: InsertTextMode.adjustIndentation,
-    insertTextFormat: InsertTextFormat.Snippet
+function keywordComplex(para: CompletionParams): CompletionItem[] {
+    return [{
+        label: "If",
+        kind: CompletionItemKind.Snippet,
+        insertText: "If $1 Then\n    \nEnd If",
+        insertTextMode: InsertTextMode.adjustIndentation,
+        insertTextFormat: InsertTextFormat.Snippet,
+    }, {
+        label: "Else",
+        kind: CompletionItemKind.Snippet,
+        insertText: "Else\n    $1",
+        insertTextMode: InsertTextMode.adjustIndentation,
+        insertTextFormat: InsertTextFormat.Snippet,
+    }, {
+        label: "ElseIf",
+        kind: CompletionItemKind.Snippet,
+        insertText: "ElseIf $1 Then\n    $2",
+        insertTextMode: InsertTextMode.adjustIndentation,
+        insertTextFormat: InsertTextFormat.Snippet,
+    }, {
+        label: "GVal",
+        kind: CompletionItemKind.Snippet,
+        insertText: "GVal($1)",
+        insertTextMode: InsertTextMode.adjustIndentation,
+        insertTextFormat: InsertTextFormat.Snippet
+    }, {
+        label: "Val",
+        kind: CompletionItemKind.Snippet,
+        insertText: "Val($1)",
+        insertTextMode: InsertTextMode.adjustIndentation,
+        insertTextFormat: InsertTextFormat.Snippet
+    }, {
+        label: "Array",
+        kind: CompletionItemKind.Snippet,
+        insertText: "Array($1)",
+        insertTextMode: InsertTextMode.adjustIndentation,
+        insertTextFormat: InsertTextFormat.Snippet
+    }, {
+        label: "Export",
+        kind: CompletionItemKind.Snippet,
+        insertText: "Export Script $1($2)\n    \nEnd Script",
+        insertTextMode: InsertTextMode.adjustIndentation,
+        insertTextFormat: InsertTextFormat.Snippet
+    }, {
+        label: "Dim",
+        kind: CompletionItemKind.Snippet,
+        insertText: "Dim $1 As $2",
+        insertTextMode: InsertTextMode.adjustIndentation,
+        insertTextFormat: InsertTextFormat.Snippet
+    }, {
+        label: "Script",
+        kind: CompletionItemKind.Snippet,
+        insertText: "Script $1()\n    \nEnd Script",
+        insertTextMode: InsertTextMode.adjustIndentation,
+        insertTextFormat: InsertTextFormat.Snippet
+    }, {
+        label: "Select",
+        kind: CompletionItemKind.Snippet,
+        insertText: "Select Case $1\n    Case $2\nEnd Select",
+        insertTextMode: InsertTextMode.adjustIndentation,
+        insertTextFormat: InsertTextFormat.Snippet
+    }, {
+        label: "Do",
+        kind: CompletionItemKind.Snippet,
+        insertText: "Do\n    $1\nLoop",
+        insertTextMode: InsertTextMode.adjustIndentation,
+        insertTextFormat: InsertTextFormat.Snippet
+    }, {
+        label: "For",
+        kind: CompletionItemKind.Snippet,
+        insertText: "For $1 To $2 Step $3\n    $4\nNext",
+        insertTextMode: InsertTextMode.adjustIndentation,
+        insertTextFormat: InsertTextFormat.Snippet
+    }, {
+        label: "With",
+        kind: CompletionItemKind.Snippet,
+        insertText: "With $1\n    $2\nEnd With",
+        insertTextMode: InsertTextMode.adjustIndentation,
+        insertTextFormat: InsertTextFormat.Snippet
+    }
+    ];
 }
-]
 
 const teaBuiltinTypes = numTypes.concat(txtTypes, otherTypes);
 const teaBuiltinTypesCompletion: CompletionItem[]
@@ -60,8 +110,8 @@ const teaBuiltinTypesCompletion: CompletionItem[]
             kind: CompletionItemKind.Struct
         };
     });
-const teaBuiltinKeywordCompletion: CompletionItem[]
-    = keywordComplex.concat(keywords.map(word => {
+function teaBuiltinKeywordCompletion(pos: CompletionParams): CompletionItem[] {
+    return keywordComplex(pos).concat(keywords.map(word => {
         return {
             label: word,
             kind: CompletionItemKind.Keyword,
@@ -69,6 +119,7 @@ const teaBuiltinKeywordCompletion: CompletionItem[]
             insertTextMode: InsertTextMode.adjustIndentation
         };
     }));
+}
 const exportFunc: Map<string, TeaFunc[]> = new Map<string, TeaFunc[]>();
 const globalValue: Map<string, string[]> = new Map<string, string[]>();
 
@@ -208,6 +259,17 @@ class TeaFunc {
 
     toString() {
         return `${this.description ? this.description + ": \n" : ''}${this.export == false ? "" : "Export"} Script ${this.name}(\n${this.parameters.map(param => param.toString()).join(", \n")} ${this.type.name === "Void" ? "" : `, \nn. 返回: Return ${this.type.name}`}\n)`;
+    }
+
+    toCompletionItem(): CompletionItem {
+        return {
+            label: this.name,
+            kind: CompletionItemKind.Function,
+            detail: this.toString(),
+            insertText: this.name + "($1)",
+            insertTextMode: InsertTextMode.adjustIndentation,
+            insertTextFormat: InsertTextFormat.Snippet
+        }
     }
 }
 /** 上下文描述类 */
@@ -595,17 +657,9 @@ function createCompletionItemsForVar(varList: TeaVar[], startOffset = Number.MAX
 function createCompletionItemsForFunc(funcList: TeaFunc[], startOffset = Number.MAX_VALUE): CompletionItem[] {
     return funcList.map(func => {
         if (func.pos < startOffset)
-            return {
-                label: func.name,
-                kind: CompletionItemKind.Function,
-                detail: func.toString()
-            };
+            return func.toCompletionItem();
     }).concat(TeaGlobalContext.smbxBuiltinFunc.map(func => {
-        return {
-            label: func.name,
-            kind: CompletionItemKind.Function,
-            detail: func.toString()
-        };
+        return func.toCompletionItem();
     }));
 }
 

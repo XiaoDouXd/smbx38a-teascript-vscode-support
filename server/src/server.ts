@@ -125,11 +125,7 @@ documents.onDidChangeContent(e => {
     exportFunc.forEach((v, k) => {
         if (k == e.document.uri) return;
         v.forEach(i => {
-            exportCompletionInfos.push({
-                label: i.name,
-                kind: CompletionItemKind.Function,
-                detail: i.toString()
-            })
+            exportCompletionInfos.push(i.toCompletionItem())
         })
     })
     globalValue.forEach((v, k) => {
@@ -153,7 +149,7 @@ documents.onDidClose(e => {
 connection.onCompletion((docPos: CompletionParams): CompletionItem[] => {
     try {
         return getMatch(docPos.textDocument.uri)
-            ?.requestCompletion(docPos.position)
+            ?.requestCompletion(docPos)
             .concat(exportCompletionInfos);
     }
     catch (ex) {

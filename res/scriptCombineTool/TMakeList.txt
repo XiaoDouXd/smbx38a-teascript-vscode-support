@@ -1,0 +1,2 @@
+-o ./combine.smt
+    ./smtScripts/
