@@ -51,7 +51,7 @@
         }
     },
     "indentationRules": {
-        "increaseIndentPattern": "\\b((((E|e)xport\\s+)?((S|s)cript\\s+)([_a-zA-Z][_a-zA-Z0-9]*)(\\([\\s\\S]*\\))) | ((I|i)f\\s+[.]*) | ((w|W)ith\\s+[.]*) | ((D|d)o\\s+[.]*) | ((F|f)or\\s+[.]*) )\\b",
-        "decreaseIndentPattern": "\\b(((E|e)nd\\s+(S|s)cript) | ((e|E)nd\\s+(I|i)f) | ((E|e)nd\\s+(W|w)ith) | ((L|l)oop\\s+[.]*) | ((N|n)ext))\\b"
+        "increaseIndentPattern": "((((E|e)xport\\s+)?((S|s)cript\\s+)([_a-zA-Z][_a-zA-Z0-9]*)(\\([\\s\\S]*\\)))|((I|i)f\\s+.*)|((E|e)lse((I|i)f)?\\s+.*)|((w|W)ith\\s+[.]*)|((D|d)o\\s+[.]*)|((F|f)or\\s+[.]*))",
+        "decreaseIndentPattern": "(((E|e)nd\\s+(S|s)cript)|((E|e)lse((I|i)f)?\\s+.*)|((e|E)nd\\s+(I|i)f)|((E|e)nd\\s+(W|w)ith)|((L|l)oop\\s+[.]*)|((N|n)ext))\\b"
     }
 }

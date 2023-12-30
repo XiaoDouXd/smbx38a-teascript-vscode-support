@@ -55,15 +55,16 @@ function getMatch(uri: string, isUpdate: boolean = false): GrammarMatchResult {
     if (!documentList.has(uri))
         return null;
     if (isUpdate) {
+        const lastRes = documentMatch.has(uri) ? documentMatch.get(uri) : null;
+
         exportFunc.delete(uri);
         globalValue.delete(uri);
-        documentMatch.set(uri, matchGrammar(compiledTeaGrammar, documentList.get(uri)));
+        const newRes = matchGrammar(compiledTeaGrammar, documentList.get(uri));
+        newRes.lastMatch = lastRes;
+        documentMatch.set(uri, newRes);
     }
     return documentMatch.get(uri);
 }
-
-// 一些跨文件信息
-const exportCompletionInfos: CompletionItem[] = [];
 
 // ---------------------------------------------------------------- 初始化事件响应
 
@@ -119,24 +120,7 @@ documents.onDidOpen(e => {
 });
 
 documents.onDidChangeContent(e => {
-    exportCompletionInfos.length = 0;
     getMatch(e.document.uri, true);
-
-    exportFunc.forEach((v, k) => {
-        if (k == e.document.uri) return;
-        v.forEach(i => {
-            exportCompletionInfos.push(i.toCompletionItem())
-        })
-    })
-    globalValue.forEach((v, k) => {
-        v.forEach(i => {
-            exportCompletionInfos.push({
-                label: i,
-                kind: CompletionItemKind.Field,
-                detail: "GlobalVar 全局变量",
-            })
-        })
-    })
 });
 
 documents.onDidClose(e => {
@@ -150,7 +134,6 @@ connection.onCompletion((docPos: CompletionParams): CompletionItem[] => {
     try {
         return getMatch(docPos.textDocument.uri)
             ?.requestCompletion(docPos)
-            .concat(exportCompletionInfos);
     }
     catch (ex) {
         console.error(ex);

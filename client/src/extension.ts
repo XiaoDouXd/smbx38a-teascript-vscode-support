@@ -22,7 +22,7 @@ let client: LanguageClient;
 export function activate(context: ExtensionContext) {
 
     // 启动测试
-    console.log("log: smbxtea extension activate!");
+    console.log("log: smbx-tea extension activate!");
 
     // 调试设置
     // --inspect=6009: runs the server in Node's Inspector mode so VS Code can attach to the server for debugging

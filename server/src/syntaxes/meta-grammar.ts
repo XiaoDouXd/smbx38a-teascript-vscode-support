@@ -12,7 +12,7 @@ import { log } from 'console';
 const linq = require('linq');
 
 type EmptyAction = () => void;
-type DocumentCompletionCallback = (match: MatchResult) => CompletionItem[];
+type DocumentCompletionCallback = (match: MatchResult) => { items: CompletionItem[], isBreak: boolean };
 type DocumentHoverCallback = (match: MatchResult) => Promise<Hover>;
 type PatternMatchedCallback = (patternMatch: PatternMatchResult) => void;
 type ScopeMatchedCallback = (scopeMatch: ScopeMatchResult) => void;
@@ -739,8 +739,6 @@ class PatternMatchResult extends MatchResult {
             for (let i = 0; i < list.length; i++) {
                 if (list[i] instanceof PatternMatchResult || list[i] instanceof ScopeMatchResult || list[i] instanceof UnMatchedText)
                     continue;
-                if (!list[i])
-                    console.log(list[i]);
                 list = list.concat(list[i].children);
 
             }
@@ -827,6 +825,8 @@ class GrammarMatchResult extends ScopeMatchResult {
     static shieldKeywordCompletion = false;
 
     grammar: LanguageGrammar;
+    lastMatch: GrammarMatchResult = null;
+
     constructor(doc: TextDocument, grammar: Grammar) {
         super(doc, grammar);
         this.grammar = grammar.grammar;
@@ -836,57 +836,11 @@ class GrammarMatchResult extends ScopeMatchResult {
         if (GrammarMatchResult.initCallback != null)
             GrammarMatchResult.initCallback();
 
-        return GrammarMatchResult.completionPostProcessing
-            ? GrammarMatchResult.completionPostProcessing(this.requestCompletionInner(pos), pos)
-            : this.requestCompletionInner(pos);
-    }
-
-    private requestCompletionInner(pos: CompletionParams): CompletionItem[] {
-        let completions: CompletionItem[] = [];
-        // 获得当前光标位置
         GrammarMatchResult.disable = false;
         GrammarMatchResult.shieldKeywordCompletion = false;
-
-        let match = this.locateMatchAtPosition(pos.position);
-        if (!match) return completions;
-
-        if (match instanceof UnMatchedPattern)
-            completions = completions.concat(match.requestCompletion(pos.position));
-        else if (match instanceof UnMatchedText)
-            completions = completions.concat(match.requestCompletion(pos.position));
-        else if (match instanceof GrammarMatchResult) {
-            completions = match.grammar.onCompletion ?
-                completions.concat(match.grammar.onCompletion(match)) :
-                completions;
-            GrammarMatchResult.shieldKeywordCompletion = true;
-        }
-        else if (match instanceof ScopeMatchResult) {
-            completions = (match.scope && match.scope.onCompletion) ?
-                completions.concat(match.scope.onCompletion(match)) :
-                completions;
-            GrammarMatchResult.shieldKeywordCompletion = true;
-        }
-
-        if (GrammarMatchResult.disable) return [];
-        for (let matchP = match; matchP != null; matchP = matchP.parent) {
-            if (matchP instanceof PatternMatchResult && matchP.pattern.onCompletion) {
-                completions = completions.concat(matchP.pattern.onCompletion(matchP));
-            }
-            if (!matchP.patternName)
-                continue;
-            if (matchP.matchedPattern && matchP.matchedPattern.pattern.onCompletion) {
-                const comps = matchP.matchedPattern.pattern.onCompletion(matchP);
-                if (GrammarMatchResult.disable) return [];
-                completions = completions.concat(comps);
-            }
-            if (matchP.matchedScope && matchP.matchedScope.scope.onCompletion) {
-                const comps = matchP.matchedScope.scope.onCompletion(matchP);
-                if (GrammarMatchResult.disable) return [];
-                completions = completions.concat(comps);
-            }
-        }
-
-        if (GrammarMatchResult.disable) return [];
+        var completions = GrammarMatchResult.completionPostProcessing
+            ? GrammarMatchResult.completionPostProcessing(this.requestCompletionInner(pos), pos)
+            : this.requestCompletionInner(pos);
 
         if (!GrammarMatchResult.shieldKeywordCompletion)
             completions = completions.concat(teaBuiltinTypesCompletion).concat(teaBuiltinKeywordCompletion(pos));
@@ -895,6 +849,66 @@ class GrammarMatchResult extends ScopeMatchResult {
             .distinct((comp: CompletionItem) => comp.label)
             .toArray();
 
+        return completions;
+    }
+
+    private requestCompletionInner(pos: CompletionParams): CompletionItem[] {
+        let completions: CompletionItem[] = [];
+        let isBreak = false;
+
+        // 获得当前光标位置
+        let match = this.locateMatchAtPosition(pos.position);
+        if (!match) return completions;
+
+        if (match instanceof UnMatchedPattern) {
+            var info = match.requestCompletionWithBreak(pos.position);
+            completions = info ? completions.concat(info.items) : completions;
+            isBreak = info?.isBreak;
+        }
+        else if (match instanceof UnMatchedText) {
+            completions = completions.concat(match.requestCompletion(pos.position));
+        }
+        else if (match instanceof GrammarMatchResult) {
+            var compInfo = match.grammar.onCompletion ? match.grammar.onCompletion(match) : null
+            completions = compInfo ? completions.concat(compInfo.items) : completions;
+
+            isBreak = compInfo?.isBreak;
+            GrammarMatchResult.shieldKeywordCompletion = true;
+        }
+        else if (match instanceof ScopeMatchResult) {
+            var compInfo = match.scope.onCompletion ? match.scope.onCompletion(match) : null
+            completions = compInfo ? completions.concat(compInfo.items) : completions;
+
+            isBreak = compInfo?.isBreak;
+            GrammarMatchResult.shieldKeywordCompletion = true;
+        }
+
+        if (GrammarMatchResult.disable) return [];
+        for (let matchP = match; matchP != null && !isBreak; matchP = matchP.parent) {
+            if (matchP instanceof PatternMatchResult && matchP.pattern.onCompletion) {
+                const compInfo = matchP.pattern.onCompletion(matchP);
+                completions = compInfo ? completions.concat(compInfo.items) : completions;
+                isBreak ||= compInfo?.isBreak;
+            }
+
+            if (!matchP.patternName) continue;
+            if (matchP.matchedPattern && matchP.matchedPattern.pattern.onCompletion) {
+                const comps = matchP.matchedPattern.pattern.onCompletion(matchP);
+                if (GrammarMatchResult.disable) return [];
+
+                completions = comps ? completions.concat(comps.items) : completions;
+                isBreak ||= comps?.isBreak;
+            }
+
+            if (matchP.matchedScope && matchP.matchedScope.scope.onCompletion) {
+                const comps = matchP.matchedScope.scope.onCompletion(matchP);
+                if (GrammarMatchResult.disable) return [];
+                completions = comps ? completions.concat(comps.items) : completions;
+                isBreak ||= comps?.isBreak;
+            }
+        }
+
+        if (GrammarMatchResult.disable) return [];
         return completions;
     }
 
@@ -956,35 +970,46 @@ class UnMatchedText extends MatchResult {
 
     requestCompletion(pos: Position): CompletionItem[] {
         let completions: CompletionItem[] = [];
+        let isBreak = false;
 
         this.allMatches.forEach(match => {
+            if (isBreak) return;
             let endMatch = match.locateMatchAtPosition(pos);
-            if (!endMatch) return;
-            if (match instanceof UnMatchedPattern) completions = completions.concat(match.requestCompletion(pos));
-            if (endMatch instanceof UnMatchedText) completions = completions.concat(endMatch.requestCompletion(pos));
 
-            for (let matchP = endMatch; matchP != this; matchP = matchP.parent) {
+            if (!endMatch) return;
+            if (match instanceof UnMatchedPattern) {
+                var info = match.requestCompletionWithBreak(pos);
+                completions = info ? completions.concat(info.items) : completions;
+                isBreak = info?.isBreak;
+            }
+            else if (endMatch instanceof UnMatchedText) completions = completions.concat(endMatch.requestCompletion(pos));
+
+            for (let matchP = endMatch; matchP != this && !isBreak; matchP = matchP.parent) {
                 if (!matchP.patternName) continue;
                 if (matchP.unmatchedPattern && matchP.unmatchedPattern.pattern.onCompletion) {
                     const comps = matchP.unmatchedPattern.pattern.onCompletion(matchP);
-                    completions = completions.concat(comps);
+                    completions = comps ? completions.concat(comps.items) : completions;
+                    isBreak ||= comps?.isBreak;
                 }
                 else {
                     if (matchP.matchedPattern && matchP.matchedPattern.pattern.onCompletion) {
                         const comps = matchP.matchedPattern.pattern.onCompletion(matchP);
-                        completions = completions.concat(comps);
+                        completions = comps ? completions.concat(comps.items) : completions;
+                        isBreak ||= comps?.isBreak;
                     }
                     if (matchP.matchedScope && matchP.matchedScope.scope.onCompletion) {
                         const comps = matchP.matchedScope.scope.onCompletion(matchP);
-                        completions = completions.concat(comps);
+                        completions = comps ? completions.concat(comps.items) : completions;
+                        isBreak ||= comps?.isBreak;
                     }
                 }
-
             }
         });
-        completions = (this.matchedScope && this.matchedScope.scope && this.matchedScope.scope.onCompletion) ?
-            completions.concat(this.matchedScope.scope.onCompletion(this)) :
-            completions;
+
+        if (this.matchedScope && this.matchedScope.scope && this.matchedScope.scope.onCompletion && !isBreak) {
+            var compInfo = this.matchedScope.scope.onCompletion(this);
+            completions = compInfo ? completions.concat(compInfo.items) : completions;
+        }
         return completions;
     }
 
@@ -1013,11 +1038,17 @@ class UnMatchedPattern extends UnMatchedText {
         });
     }
 
-    requestCompletion(pos: Position) {
+    requestCompletionWithBreak(pos: Position): { items: CompletionItem[], isBreak: boolean } {
         let completions: CompletionItem[] = [];
-        if (this.pattern.onCompletion)
-            completions = completions.concat(this.pattern.onCompletion(this));
-        return completions.concat(super.requestCompletion(pos));
+        if (this.pattern.onCompletion) {
+            const compInfo = this.pattern.onCompletion(this);
+            completions = compInfo ? compInfo.items : super.requestCompletion(pos);
+            if (compInfo && !compInfo.isBreak) {
+                completions = completions.concat(super.requestCompletion(pos));
+            }
+            return { items: completions, isBreak: compInfo?.isBreak };
+        }
+        else return { items: super.requestCompletion(pos), isBreak: false };
     }
 
     getMatch(name: string): MatchResult[] {

@@ -95,7 +95,7 @@
 			"patterns": [
 				{
 					"name": "keyword.operator",
-					"match": "([+\\-\\*/<=>\\?\\!.]|(\\b((A|a)nd)\\b)|\\b((O|o)r)\\b|\\b((N|n)ot)\\b|\\b((X|x)or)\\b|\\b((E|e)qv)\\b|\\b((I|i)mp)\\b)"
+					"match": "([+\\-\\*/<=>\\?\\!.]|(\\b((M|m)od)\\b)|(\\b((A|a)nd)\\b)|\\b((O|o)r)\\b|\\b((N|n)ot)\\b|\\b((X|x)or)\\b|\\b((E|e)qv)\\b|\\b((I|i)mp)\\b)"
 				}
 			]
 		},

@@ -17,7 +17,7 @@ const keywords = [
     "Then", "End",
     "Case", "GoTo",
     "GoSub", "As", "Next", "Loop", "While",
-    "Step", "Continue", "Return", "Exit", "Until", "Call"
+    "Step", "Continue", "Return", "Exit", "Until", "Call", "Mod", "ReDim"
 ];
 function keywordComplex(para: CompletionParams): CompletionItem[] {
     return [{
