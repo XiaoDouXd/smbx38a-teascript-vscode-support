@@ -30,6 +30,18 @@ GrammarMatchResult.initCallback = () => {
 }
 
 GrammarMatchResult.completionPostProcessing = (items, params) => {
+    if (items.length <= 0) {
+        items = items.concat(teaBuiltinKeywordCompletion(params))
+        if (isShowExportedFunc)
+            exportFunc.forEach((v, k) => {
+                if (k == params.textDocument.uri) return;
+                v.forEach(i => {
+                    items.push(i.toCompletionItem())
+                })
+            })
+        return items;
+    }
+
     if (isInDim && !isInBlock) return teaBuiltinKeywordCompletion(params);
     else {
         if (isShowExportedFunc)
@@ -48,7 +60,7 @@ function getObjectType(match: MatchResult, context: TeaContext): TeaType {
     const reg = /([_a-zA-Z][_a-zA-Z0-9]*)(\([.]*\))*/;
     let name = "";
 
-    if (match.children.length === 2) {
+    if (match.children && match.children.length === 2) {
         if (match.children[0].text === ".") {
             const prevIdx = match.parent.children.indexOf(match) - 1;
             const prevMatch = match.parent.children[prevIdx];
@@ -110,8 +122,7 @@ function onExpressionCompletion(match: MatchResult): { items: CompletionItem[], 
             const prevMatch = match.parent.parent.children[prevIdx];
             const type = getObjectType(prevMatch, context);
 
-            if (!type)
-                return { items: [], isBreak: true };
+            if (!type) return { items: [], isBreak: false };
 
             if (type.orderedMember) {
                 // 排序基数
@@ -141,21 +152,46 @@ function onExpressionCompletion(match: MatchResult): { items: CompletionItem[], 
         }
     }
 
-    if (match.text === ".") {
+    if (match.text === "" || match.text.endsWith(".")) {
+        const context = match.matchedScope.state as TeaContext;
+        const prevIdx = match.parent.parent.children.indexOf(match.parent) - 1;
+        const prevMatch = match.parent.parent.children[prevIdx];
+        const type = prevMatch ? getObjectType(prevMatch, context) : null;
+
+        if (!type) return { items: [], isBreak: false };
         isShowExportedFunc = false;
         GrammarMatchResult.shieldKeywordCompletion = true;
-        return {
-            items: context.getAllVariables().map(v => {
-                if (v.dotFlag)
+        if (type.orderedMember) {
+            // 排序基数
+            const base = 1000;
+            return {
+                items: type.members.map((member, idx) => {
                     return {
-                        label: v.name,
-                        kind: CompletionItemKind.Variable,
-                        detail: v.toString()
+                        label: member.name,
+                        detail: member.toString(),
+                        sortText: (base + idx).toString(),
+                        kind: CompletionItemKind.Field
                     };
-            }), isBreak: true
-        };
+                }), isBreak: true
+            };
+        }
+        else {
+            return {
+                items: type.members.map((member) => {
+                    return {
+                        label: member.name,
+                        detail: member.toString(),
+                        kind: CompletionItemKind.Field
+                    };
+                }), isBreak: true
+            };
+        }
     }
-    return { items: [], isBreak: false };
+
+    return {
+        items: [],
+        isBreak: false
+    };
 }
 
 // ----------------------------------------------------------------
@@ -212,7 +248,6 @@ const teaGrammarPattern: LanguageGrammar = {
         // 变量定义
         "var-declare": {
             name: "Var Declare",
-            crossLine: true,
             patterns: [
                 "Dim <name> [, <name> ...] As <type> [= <expression>]"
             ],
@@ -229,8 +264,8 @@ const teaGrammarPattern: LanguageGrammar = {
                 context.addVariable(va);
             },
             onCompletion: (m) => {
-                GrammarMatchResult.shieldKeywordCompletion = true;
-                return { items: [], isBreak: false }
+                GrammarMatchResult.shieldKeywordCompletion = false;
+                return { items: teaBuiltinTypesCompletion, isBreak: false }
             }
         },
         // 表达式定义
@@ -353,7 +388,6 @@ const teaGrammarPattern: LanguageGrammar = {
             },
             crossLine: true,
             onMatched: (match) => {
-                isInDim = true
                 const type = getMatchedProps(match, "type");
                 const name = getMatchedProps(match, "name");
 
@@ -435,11 +469,16 @@ const teaGrammarPattern: LanguageGrammar = {
 
                 const o = context.global.getFunc(name);
                 return Promise.resolve({ contents: [`${o ? o : ""}`], });
+            },
+            onCompletion: (m) => {
+                GrammarMatchResult.shieldKeywordCompletion = true;
+                return { items: [], isBreak: false };
             }
         },
         // 变量函数调用
         "func-call-val": {
             name: "Function Call Var",
+            strict: false,
             patterns: ["<name>(<val>)", "Array(<val>(<expression>))"],
             dictionary: {
                 "name": {
