@@ -2,21 +2,6 @@
 // 服务端初始化和事件响应设置
 // ================================================================
 
-import { configure, getLogger } from "log4js";
-configure({
-    appenders: {
-        smbx_tea: {
-            type: "dateFile",
-            filename: "./xiaodou_logs/smbx_tea",
-            pattern: "yyyy-MM-dd-hh.log",
-            alwaysIncludePattern: true,
-        },
-    },
-    categories: { default: { appenders: ["smbx_tea"], level: "debug" } }
-});
-
-const logger = getLogger("smbx_tea");
-
 import {
     createConnection,
     TextDocuments,
