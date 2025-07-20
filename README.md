@@ -1,6 +1,6 @@
-# VSC语言插件编写学习，以SMBX Teascript为例
+# vscode 语言插件编写学习，以 teascript 为例
 
-这是一个VS code语言插件编写的学习案例，目标是搭建一个更方便的SMBX Teascript编码工具。关于SMBX Teascript的编码文档，可以移步[此处(Wiki)](https://wiki.smbx.world/wiki/Category:TeaScript.vbs)。
+这是一个 vscode 语言插件编写的学习案例，目标是搭建一个更方便的 teascript 编码工具。关于 teascript 的编码文档，可以移步[此处(Wiki)](https://wiki.smbx.world/wiki/Category:TeaScript.vbs)。
 
 ## 要实现的功能清单
 
