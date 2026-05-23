@@ -1,0 +1,33 @@
+<!-- title: Special Layers -->
+<!-- pageid: 1329 -->
+<!-- revid: 6267 -->
+<!-- timestamp: 2020-07-06T08:07:54Z -->
+<!-- source: https://wohlsoft.ru/pgewiki/Special_Layers -->
+
+[[Category:TeaScript.vbs]]
+In SMBX38A, there are special layer names that have special behaviors. To create a special layer, call the layer by the name. The <code>*</code> are wildcards and can have any text inside. use this wildcard to have multiple special layers of the same name.  The layer text box will turn red if the layer is named correctly. 
+[[File:Special Layer Example.png|thumb|A special layer as shown in the editor. Take note that the layer name is inside the parenthesis and the name is in red.]]
+<br />
+{| class="wikitable"
+|+
+!Name
+!Description
+|-
+|att-alphaup(*)
+|UNKNOWN
+|-
+|att-alphadown(*)
+|UNKNOWN
+|-
+|att-screen(*)
+|Layer follows the player 1 camera
+|-
+|att-screenii(*)
+|Layer follows the player 2 camera
+|-
+|att-player1(*)
+|Layer follows player 1.This includes during death in multiplayer.
+|-
+|att-player2(*)
+|Layer follows player 2. This includes during death in multiplayer.
+|}

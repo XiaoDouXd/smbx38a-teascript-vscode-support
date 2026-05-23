@@ -1,0 +1,63 @@
+<!-- title: Warp (TeaScript) -->
+<!-- pageid: 1143 -->
+<!-- revid: 10431 -->
+<!-- timestamp: 2026-04-18T03:22:21Z -->
+<!-- source: https://wohlsoft.ru/pgewiki/Warp_(TeaScript) -->
+
+[[Category:TeaScript.vbs]]
+Warp is a class in TeaScript.vbs that allows you to read/write values for warps.
+
+=Using the Warp Class=
+To read the value of <code>Warp</code> use:
+<syntaxhighlight lang="vb">
+Warp(index).name
+</syntaxhighlight>
+
+To change the value of <code>Warp</code> use:
+<syntaxhighlight lang="vb">
+Warp(index).name = value
+</syntaxhighlight>
+
+Where index is the index as shown in the editor.
+
+=Warp Properties=
+=====Physical Properties=====
+{{Tea_table|1=  
+  {{Tea_row|double|x|-|The top left x position of the entrance in scene coordinates}}
+  {{Tea_row|double|y|-|The top left y position of the entrance in scene coordinates}}
+  {{Tea_row|double|ex|-|The top left x position of the exit in scene coordinates}}
+  {{Tea_row|double|ey|-|The top left y position of the exit in scene coordinates}}
+  {{Tea_row|double|xsp|-|The horizontal speed of the warp. Negative values cause leftwards movement, positive values cause rightwards movement. This affects both the entrance and exit warp, and any effects spawned by the warp animation (such as doors).}}
+  {{Tea_row|double|ysp|-|The vertical speed of the warp. Negative values cause upwards movement, positive values cause downwards movement. This affects both the entrance and exit warp, and any effects spawned by the warp animation (such as doors).}}
+  {{Tea_row|double|hide|-|Whether the warp is hidden or not.}}
+}}
+
+=====Behavioral Properties=====
+{{Tea_table|1=  
+  {{Tea_row|double|twoside|-|Determines if the exit also warps to the entrance (0: Disabled, 1: Enabled).}}
+  {{Tea_row|double|cannon|-|The flight duration of the pipe cannon. Use 0 to disable the cannon.}}
+  {{Tea_row|double|locked|-|Determines if the warp is locked and requires a key? (0: No, 1: Yes)}}
+  {{Tea_row|double|bomb|-|Determines if the warp needs to be hit by an explosion? (0: No, 1: Yes)}}
+  {{Tea_row|double|mini|-|Determines if the warp can only be accessed in mini form? (0: No, 1: Yes)}}
+  {{Tea_row|double|noyoshi|-|Prevents yoshi from passing through the warp. Removes the yoshi if the player attempts to. (0: Allow Yoshi, 1: Disable Yoshi)}}
+  {{Tea_row|double|canpick|-|Allows NPCs the player is holding to pass through the warp. If the player is holding an item, the item is dropped at the entarnce. If the player is wearing a helmet, the helmet is removed. If the item is in yoshi's mouth, yoshi spits the item. (0: Disables NPCs, 1: Allows NPCs)}}
+  {{Tea_row|double|starcnt|-|The number of stars needed to enter the warp.}}
+  {{Tea_row|string|starmsg|-|The message shown when the player doesn't have enough stars.}}
+}}
+
+=====Level Warp Properties=====
+{{Tea_table|1=  
+  {{Tea_row|string|levelname|-|The filename of the level the warp will send the player to. Will automatically force the Level Exit warp type in game.}}
+  {{Tea_row|double|levelwarp|-|The ID of the warp the player exits to if the warp sends the player to another level. Use 0 for regular entrance.}}
+  {{Tea_row|double|worldx|-|The x positon of the world map that the player will be sent to when the player exits the level.}}
+  {{Tea_row|double|worldy|-|The y positon of the world map that the player will be sent to when the player exits the level.}}
+}}
+
+=====Warp Events=====
+{{Tea_table|1=  
+  {{Tea_row|string|warpevent|-|The event/script that should be called when entering the warp.}}
+}}
+
+
+=Oddities and Quirks=
+Below is a list of certain quirks warps have that does not conform to standard behavior or simply other miscellaneous behavior.

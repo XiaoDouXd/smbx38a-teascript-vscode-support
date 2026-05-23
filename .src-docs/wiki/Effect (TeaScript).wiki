@@ -1,0 +1,48 @@
+<!-- title: Effect (TeaScript) -->
+<!-- pageid: 1397 -->
+<!-- revid: 10479 -->
+<!-- timestamp: 2026-05-22T00:04:13Z -->
+<!-- source: https://wohlsoft.ru/pgewiki/Effect_(TeaScript) -->
+
+Effect is a class in TeaScript.vbs that allows you to read/write values of Effects.
+
+=Spawning an Effect=
+To spawn an effect you can use the <code>FXCreate</code> function.
+<syntaxhighlight lang="vb">
+call FXCreate(ID, X, Y, Xsp, Ysp, Frames, AnimationSpeed, Const, Gravity, Advanced)
+</syntaxhighlight>
+
+For more information visit the [[Functions_(TeaScript)#FXCreate|FXCreate]] documentation
+
+=Using the Effect Class=
+To read the value of <code>Effect</code> use:<syntaxhighlight lang="vb">
+effect(index).name
+</syntaxhighlight>To change the value of <code>Effect</code> use:<syntaxhighlight lang="vb">
+effect(index).name = value
+</syntaxhighlight>
+
+
+
+=Effect Properties=
+=====Physical Properties=====
+{{Tea_table|1=  
+  {{Tea_row|double|id|-|The ID is used to decide and tie in its graphics, behavior, and effect flags. You can change this value to change the effect into another}}
+  {{Tea_row|double|x|-|The x position of the effect in scene coordinates.}}
+  {{Tea_row|double|y|-|The y position of the effect in scene coordinates.}}
+  {{Tea_row|double|xsp|-|The horizontal speed of the effect. Negative values cause leftwards movement, positive values cause rightwards movement.}}
+  {{Tea_row|double|ysp|-|The vertical speed of the effect. Negative values cause upwards movement, positive values cause downwards movement.}}
+}}
+
+=====Graphical Properties=====
+{{Tea_table|1=  
+  {{Tea_row|double|extx|-|Will only affect the effect if the effect flag 'GFXSplitWidth' is enabled. This values chooses the alternative GFX x position starting from 0. Setting this -1 makes the effect invisible.}}
+  {{Tea_row|double|exty|-|Will only affect the effect if the effect flag 'GFXSplitHeight' is enabled. This values chooses the alternative GFX y position starting from 0. Setting this -1 makes the effect invisible.}}
+  {{Tea_row|double|zpos|-|The priority value of the effect. Must be a number between 0 and 1, where 0 is foreground and 1 is background.}}
+
+}}
+
+=Oddities and Quirks=
+Below is a list of certain quirks certain effects have that does not conform to standard behavior or simply other miscellaneous behavior.
+
+
+[[Category:TeaScript.vbs]]

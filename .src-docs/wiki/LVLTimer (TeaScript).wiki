@@ -1,0 +1,55 @@
+<!-- title: LVLTimer (TeaScript) -->
+<!-- pageid: 1266 -->
+<!-- revid: 8739 -->
+<!-- timestamp: 2023-10-18T20:59:49Z -->
+<!-- source: https://wohlsoft.ru/pgewiki/LVLTimer_(TeaScript) -->
+
+[[Category:TeaScript.vbs]]
+
+LVLTimer is a special function in TeaScript that allows you to read and write system variables regarding the level timer.   
+
+=Activating the Level Timer=
+[[File:AKtrUC6.png|thumb|The "Game Timer" settings as shown in the events menu.]]
+To activate the level timer, use the <code>Game Timer</code> event settings in the <code>Other</code> category.
+
+The timer must be enabled, set to a count and interval timer higher than zero. If these options are not set, the game timer will not work, even if those settings are manually changed with code.
+
+=Using the LVLTimer Class=
+To read the value of <code>LVLTimer</code> use:
+<syntaxhighlight lang="vb">
+LVLTimer(name)
+</syntaxhighlight>
+
+To change the value of <code>LVLTimer</code> use:
+<syntaxhighlight lang="vb">
+LVLTimer(name) = value
+</syntaxhighlight>
+
+
+=LVLTimer Properties=
+=====Physical Properties=====
+{{Tea_table|1=  
+  {{Tea_row|double|x|-|The top left x position of the timer in the HUD in screen coordinates.}}
+  {{Tea_row|double|y|-|The top left y position of the timer in the HUD in screen coordinates.}}
+}}
+
+=====Behavioral Properties=====
+{{Tea_table|1=  
+  {{Tea_row|double|count|-|The current value of the timer.}}
+  {{Tea_row|double|intv|-|The delay in frames it takes to update the timer. (e.g. An interval of 65 means the timer counts every 65 frames.)}}
+  {{Tea_row|double|type|-|Determines if the timer counts up or down. (0: down, -1: up)}}
+}}
+
+=====Graphical Properties=====
+{{Tea_table|1=  
+  {{Tea_row|double|show|-|Determines if the timer visible. The timer still counts even when the timer is hidden. (0: hide, -1: show)}}
+  {{Tea_row|double|color|-|An overlay hue added to the text. Setting this value to 0 makes the text invisible, setting it to -1 returns it to default. Use the <code>rgba(red, green, blue, alpha)</code> function to choose a specific hue.}}
+}}
+
+=Oddities and Quirks=
+Below is a list of certain quirks the timer have that does not conform to standard behavior or simply other miscellaneous behavior.
+* Setting the interval to zero appears to disable the timer completely. Even after setting it back to another value, the timer will not appear nor update. The only way to re-enable the timer is to call an event setting the interval back to a non-zero value.
+
+*When the timer counts down, setting <code>count</code> to zero does not kill all players. The game only kills the player when the game updates the timer into zero. Setting <code>count</code> and <code>intv</code> to 1 will instead kill all players (with a one-frame delay).
+
+*Since the timer uses screen coordinates for its position, its position is unaffected by split-screen.

@@ -12,250 +12,154 @@ import {
     HoverParams,
     Hover,
     CompletionParams,
-    WorkspaceFolder,
-    WorkDoneProgress,
-    CompletionItemKind,
+    TextDocumentSyncKind,
 } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import teaGrammarPattern from './syntaxes/tea-grammar-pattern';
 import teaBuiltinContext from './syntaxes/tea-builtin-context';
 import { TeaGlobalContext, exportFunc, globalValue } from './syntaxes/tea-context';
 import { matchGrammar, compileGrammar, GrammarMatchResult } from './syntaxes/meta-grammar';
-import linq = require("linq");
 
 // ---------------------------------------------------------------- 初始化连接对象
 
 // 初始化 LSP 连接对象
-// 连接对象对客户端-服务端的信息交互进行了封装
-// 协议中的所有的消息都有封装
 const connection = createConnection(ProposedFeatures.all);
 const documentList = new Map<string, TextDocument>();
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 
-// 编译和初始化语法模板
+// 编译语法模板（仅一次, 编译结果在所有文档间共享）
 const compiledTeaGrammar = compileGrammar(teaGrammarPattern);
 TeaGlobalContext.loadBuiltinContext(teaBuiltinContext);
-const documentMatch = new Map<string, GrammarMatchResult>();
-function getMatch(uri: string, isUpdate: boolean = false): GrammarMatchResult {
-    if (!documentList.has(uri))
-        return null;
-    if (isUpdate) {
-        const lastRes = documentMatch.has(uri) ? documentMatch.get(uri) : null;
 
-        exportFunc.delete(uri);
-        globalValue.delete(uri);
-        const newRes = matchGrammar(compiledTeaGrammar, documentList.get(uri));
-        newRes.lastMatch = lastRes;
-        documentMatch.set(uri, newRes);
+// ---------------------------------------------------------------- 文档级缓存
+/**
+ * 每个文档持有一份缓存:
+ *  - version:  文本版本号, 用于判断是否需要重新解析
+ *  - match:    上一次解析得到的 GrammarMatchResult
+ *  - parsing:  是否正在解析中(避免重入)
+ *  - dirty:    解析过程中是否又有新的修改进来
+ *  - timer:    防抖定时器
+ */
+interface DocumentCache {
+    version: number;
+    match: GrammarMatchResult | null;
+    parsing: boolean;
+    dirty: boolean;
+    timer: NodeJS.Timeout | null;
+}
+const documentCache = new Map<string, DocumentCache>();
+
+/** 防抖延迟(ms): 输入停止后才重新解析整篇文档 */
+const DEBOUNCE_MS = 150;
+
+function getCache(uri: string): DocumentCache {
+    let c = documentCache.get(uri);
+    if (!c) {
+        c = { version: -1, match: null, parsing: false, dirty: false, timer: null };
+        documentCache.set(uri, c);
     }
-    return documentMatch.get(uri);
+    return c;
+}
+
+/** 同步执行一次解析(用于补全/悬停立刻需要结果的场合) */
+function parseSync(uri: string): GrammarMatchResult | null {
+    const doc = documentList.get(uri);
+    if (!doc) return null;
+    const cache = getCache(uri);
+    // 已是最新版本则复用
+    if (cache.match && cache.version === doc.version) return cache.match;
+
+    // 重新解析: 在解析之前清掉旧的跨文件符号
+    exportFunc.delete(uri);
+    globalValue.delete(uri);
+
+    const m = matchGrammar(compiledTeaGrammar, doc);
+    if (m) {
+        m.lastMatch = cache.match;
+        cache.match = m;
+        cache.version = doc.version;
+    }
+    return cache.match;
+}
+
+/** 延迟解析: 短时间内的连续输入只触发一次解析 */
+function scheduleParse(uri: string) {
+    const cache = getCache(uri);
+    if (cache.timer) clearTimeout(cache.timer);
+    cache.timer = setTimeout(() => {
+        cache.timer = null;
+        try {
+            parseSync(uri);
+        }
+        catch (ex) {
+            connection.console.error(`parseSync failed: ${String(ex)}`);
+        }
+    }, DEBOUNCE_MS);
 }
 
 // ---------------------------------------------------------------- 初始化事件响应
 
-// 服务端的声明周期从客户端发送 Initialize 请求开始
-// 本部分主要用于设置客户端事件该如何响应
-
-// 声明周期开始时会运行这个 onInitialize 函数
-// 该函数主要用于告知客户端该服务端支持的特性
-// 该信息用 capabilities: ServerCapabilities 类传递
-// ServerCapabilities 主要包括了 Workspace 和 TextDocument 两个方面的API
-connection.onInitialize((params: InitializeParams) => {
-    // 明确声明插件支持的语言特性
+connection.onInitialize((_params: InitializeParams) => {
     const result: InitializeResult = {
         capabilities: {
-            // 增量处理
-            // textDocumentSync: TextDocumentSyncKind.Incremental,
-
-            // 代码补全
+            textDocumentSync: TextDocumentSyncKind.Incremental,
             completionProvider: {
-                // resolveProvider: true,
                 triggerCharacters: ["."]
             },
-
-            // 悬停提示
             hoverProvider: true,
-            // // 签名提示
-            // signatureHelpProvider: {
-            //   triggerCharacters: ["("],
-            // },
-            // // 格式化
-            // documentFormattingProvider: true,
-            // // 语言高亮
-            // documentHighlightProvider: true,
         },
     };
     return result;
 });
 
-// 完成握手后 客户端会返回 initialized notification 事件
-// 可以使用下面方法设置接收的响应
 connection.onInitialized(() => {
-    console.log("SMBX tea intellisense start.");
-    connection.window.showInformationMessage('smbx38a teascript support start.');
+    connection.console.log("SMBX tea intellisense started.");
 });
 
-// -------------------------------------------------------------- 设置工作区事件响应
-
-// -------------------------------------------------------------- 设置文档事件响应
+// -------------------------------------------------------------- 文档生命周期
 documents.onDidOpen(e => {
     documentList.set(e.document.uri, e.document);
-    documentMatch.set(e.document.uri, matchGrammar(compiledTeaGrammar, e.document));
-    getMatch(e.document.uri, true);
+    // 打开时立刻同步解析一次(用户往往会立刻查看补全/悬停)
+    parseSync(e.document.uri);
 });
 
 documents.onDidChangeContent(e => {
-    getMatch(e.document.uri, true);
+    documentList.set(e.document.uri, e.document);
+    scheduleParse(e.document.uri);
 });
 
 documents.onDidClose(e => {
+    const cache = documentCache.get(e.document.uri);
+    if (cache?.timer) clearTimeout(cache.timer);
     exportFunc.delete(e.document.uri);
     globalValue.delete(e.document.uri);
     documentList.delete(e.document.uri);
-    documentMatch.delete(e.document.uri);
+    documentCache.delete(e.document.uri);
 });
 
+// -------------------------------------------------------------- 补全/悬停
 connection.onCompletion((docPos: CompletionParams): CompletionItem[] => {
     try {
-        return getMatch(docPos.textDocument.uri)
-            ?.requestCompletion(docPos)
+        const m = parseSync(docPos.textDocument.uri); // 强制同步, 保证结果与当前文档一致
+        return m ? m.requestCompletion(docPos) : [];
     }
     catch (ex) {
-        console.error(ex);
+        connection.console.error(`onCompletion error: ${String(ex)}`);
+        return [];
     }
 });
 
-// 悬停事件
-connection.onHover((params: HoverParams): Promise<Hover> => {
+connection.onHover((params: HoverParams): Promise<Hover> | Hover => {
     try {
-        return documentMatch.get(params.textDocument.uri)?.requestHover(params.position);
+        const m = parseSync(params.textDocument.uri);
+        return m ? m.requestHover(params.position) : { contents: [""] };
     }
     catch (ex) {
-        console.error(ex);
+        connection.console.error(`onHover error: ${String(ex)}`);
+        return { contents: [""] };
     }
 });
 
-// -------------------------------------------------------------- 开启事件监听
+// -------------------------------------------------------------- 启动
 connection.listen();
 documents.listen(connection);
-
-
-// 增量错误诊断
-// documents.onDidChangeContent((change) => {
-//   const textDocument = change.document;
-
-//   // 若出现了两个以上长度的大写字符
-//   const text = textDocument.getText();
-//   const pattern = /\b[A-Z]{2,}\b/g;
-//   let m: RegExpExecArray | null;
-
-//   let problems = 0;
-//   const diagnostics: Diagnostic[] = [];
-//   while ((m = pattern.exec(text))) {
-//     problems++;
-//     const diagnostic: Diagnostic = {
-//       severity: DiagnosticSeverity.Warning,
-//       range: {
-//         start: textDocument.positionAt(m.index),
-//         end: textDocument.positionAt(m.index + m[0].length),
-//       },
-//       message: `${m[0]} is all uppercase.`,
-//       source: "Diagnostics Test",
-//     };
-//     diagnostics.push(diagnostic);
-//   }
-
-//   // 向 vsc 发送诊断
-//   connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
-// });
-
-// 开启连接对象和文档对象监听事件
-
-
-// // 悬停事件
-// connection.onHover((params: HoverParams): Promise<Hover> => {
-//   return Promise.resolve({
-//     contents: ["..."],
-//   });
-// });
-
-// // 文档格式化事件
-// connection.onDocumentFormatting(
-//   (params: DocumentFormattingParams): Promise<TextEdit[]> => {
-//     const { textDocument } = params;
-//     const doc = documents.get(textDocument.uri)!;
-//     const text = doc.getText();
-//     const pattern = /\b[A-Z]{3,}\b/g;
-//     let match;
-//     const res = [];
-//     while ((match = pattern.exec(text))) {
-//       res.push({
-//         range: {
-//           start: doc.positionAt(match.index),
-//           end: doc.positionAt(match.index + match[0].length),
-//         },
-//         newText: match[0].replace(/(?<=[A-Z])[A-Z]+/, (r) => r.toLowerCase()),
-//       });
-//     }
-
-//     return Promise.resolve(res);
-//   }
-// );
-
-// // 文档字符高亮事件
-// connection.onDocumentHighlight(
-//   (params: DocumentHighlightParams): Promise<DocumentHighlight[]> => {
-//     const { textDocument } = params;
-//     const doc = documents.get(textDocument.uri)!;
-//     const text = doc.getText();
-//     const pattern = /\b\b/i;
-//     const res: DocumentHighlight[] = [];
-//     let match;
-//     while ((match = pattern.exec(text))) {
-//       res.push({
-//         range: {
-//           start: doc.positionAt(match.index),
-//           end: doc.positionAt(match.index + match[0].length),
-//         },
-//         kind: DocumentHighlightKind.Write,
-//       });
-//     }
-//     return Promise.resolve(res);
-//   }
-// );
-
-// // 函数签名
-// connection.onSignatureHelp(
-//   (params: SignatureHelpParams): Promise<SignatureHelp> => {
-//     return Promise.resolve({
-//       signatures: [
-//         {
-//           label: "Signature Demo",
-//           documentation: "human readable content",
-//           parameters: [
-//             {
-//               label: "@p1 first param",
-//               documentation: "content for first param",
-//             },
-//           ],
-//         },
-//       ],
-//       activeSignature: 0,
-//       activeParameter: 0,
-//     });
-//   }
-// );
-
-// // 代码补充详情
-// connection.onCompletionResolve((item: CompletionItem): CompletionItem => {
-//   console.log("request completion resolve");
-
-//   if (item.data === 1) {
-//     item.detail = "TypeScript is Awesome";
-//     item.documentation = "...so on and so on";
-//   } else if (item.data === 2) {
-//     item.detail = "TypeScript is better then Javascript";
-//     item.documentation = "...so on and so on";
-//   }
-//   return item;
-// });

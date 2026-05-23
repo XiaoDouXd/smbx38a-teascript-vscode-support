@@ -1,1 +1,95 @@
-{}
+{
+    "If Then": {
+        "prefix": "if",
+        "body": [
+            "If ${1:condition} Then",
+            "    $0",
+            "End If"
+        ],
+        "description": "If ... End If 结构"
+    },
+    "If-Else": {
+        "prefix": "ifelse",
+        "body": [
+            "If ${1:condition} Then",
+            "    $2",
+            "Else",
+            "    $0",
+            "End If"
+        ],
+        "description": "If ... Else ... End If 结构"
+    },
+    "For Loop": {
+        "prefix": "for",
+        "body": [
+            "For ${1:i} = ${2:1} To ${3:10}",
+            "    $0",
+            "Next"
+        ],
+        "description": "For ... Next 循环"
+    },
+    "Do While": {
+        "prefix": "dow",
+        "body": [
+            "Do While ${1:condition}",
+            "    $0",
+            "Loop"
+        ],
+        "description": "Do While ... Loop 循环"
+    },
+    "Do Until": {
+        "prefix": "dou",
+        "body": [
+            "Do Until ${1:condition}",
+            "    $0",
+            "Loop"
+        ],
+        "description": "Do Until ... Loop 循环"
+    },
+    "Select Case": {
+        "prefix": "select",
+        "body": [
+            "Select Case ${1:value}",
+            "    Case ${2:value1}",
+            "        $3",
+            "    Case Else",
+            "        $0",
+            "End Select"
+        ],
+        "description": "Select Case 结构"
+    },
+    "With": {
+        "prefix": "with",
+        "body": [
+            "With ${1:object}",
+            "    .$0",
+            "End With"
+        ],
+        "description": "With ... End With 结构"
+    },
+    "Script Function": {
+        "prefix": "script",
+        "body": [
+            "Script ${1:funcName}(${2:params}, Return ${3:Double})",
+            "    $0",
+            "End Script"
+        ],
+        "description": "脚本函数定义"
+    },
+    "Export Script": {
+        "prefix": "export",
+        "body": [
+            "Export Script ${1:funcName}(${2:params})",
+            "    $0",
+            "End Script"
+        ],
+        "description": "导出脚本函数(跨文件可见)"
+    },
+    "Dim Variable": {
+        "prefix": "dim",
+        "body": [
+            "Dim ${1:varName} As ${2:Double}"
+        ],
+        "description": "局部变量声明"
+    }
+}

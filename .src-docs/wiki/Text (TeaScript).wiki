@@ -1,0 +1,65 @@
+<!-- title: Text (TeaScript) -->
+<!-- pageid: 1138 -->
+<!-- revid: 8730 -->
+<!-- timestamp: 2023-10-18T02:10:19Z -->
+<!-- source: https://wohlsoft.ru/pgewiki/Text_(TeaScript) -->
+
+[[Category:TeaScript.vbs]]
+Text is a class in TeaScript.vbs that allows you to read/write values for text.
+
+=Creating a Text=
+To create a text object use the <code>TxtCreate</code> function.
+<syntaxhighlight lang="vb">
+call TxtCreate(index, x, y, sasc, easc, cdata, lnum, fontid, flag, text)
+</syntaxhighlight>
+
+For more information visit the [[Functions_(TeaScript)#TxtCreate|TxtCreate ]] documentation.
+
+
+=Using the Text Class=
+To read the value of <code>Text</code> do:
+<syntaxhighlight lang="vb">
+Text(index).name
+</syntaxhighlight>
+
+To change the value of <code>Text</code> do:
+<syntaxhighlight lang="vb">
+Text(index).name = value
+</syntaxhighlight>
+
+
+Where index is an unique identifier defined when creating the text object.
+
+
+=Text Properties=
+=====Physical Properties=====
+{{Tea_table|1=  
+  {{Tea_row|string|text|-|The text shown.}}
+  {{Tea_row|double|x|-|The x coordinate. It uses screen or scene coordinates based on its flag in TxtCreate.}}
+  {{Tea_row|double|y|-|The y coordinate. It uses screen or scene coordinates based on its flag in TxtCreate.}}
+}}
+
+=====Graphical Properties=====
+{{Tea_table|1=  
+  {{Tea_row|double|zpos|-|The priority of the text. Foreground is 0 and background is 1.}}
+  {{Tea_row|double|hide|-|Determines if the text is hidden.(0: Show text; 1: Hide text)}}
+  {{Tea_row|double|forecolor|-|An overlay hue added to the text. Setting this value to 0 makes the player invisible, setting it to -1 returns it to default. Use the <code>rgba(red, green, blue, alpha)</code> function to choose a specific hue.}}
+  {{Tea_row|double|forecolor_r|-|The red value of the hue described in 'forecolor'. Should be a value between 0 to 255. Use this value to read and get only the red component.}}
+  {{Tea_row|double|forecolor_g|-|The green value of the hue described in 'forecolor'. Should be a value between 0 to 255. Use this value to read and get only the green component.}}
+  {{Tea_row|double|forecolor_b|-|The blue value of the hue described in 'forecolor'. Should be a value between 0 to 255. Use this value to read and get only the blue component.}}
+  {{Tea_row|double|forecolor_a|-|The alpha value of the hue described in 'forecolor'. Should be a value between 0 to 255. Use this value to read and get only the alpha component.}}
+}}
+
+=====Other=====
+{{Tea_table|1=  
+  {{Tea_row|double|width|-|The number of characters of a single row in the NPC image file.}}
+  {{Tea_row|double|foreground|-|Set this to 0 and the text created will be hidden. Set this to 1 and the text will be visible.}}
+}}
+
+=====Unknown=====
+{{Tea_table|1=  
+  {{Tea_row|double|height|-|Unknown}}
+}}
+
+=Oddities and Quirks=
+Below is a list of certain quirks text have that does not conform to standard behavior or simply other miscellaneous behavior.

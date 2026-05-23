@@ -1,0 +1,106 @@
+<!-- title: Bitmap (TeaScript) -->
+<!-- pageid: 1146 -->
+<!-- revid: 10391 -->
+<!-- timestamp: 2026-04-10T15:40:55Z -->
+<!-- source: https://wohlsoft.ru/pgewiki/Bitmap_(TeaScript) -->
+
+Bitmap is a class in TeaScript.vbs that allows you to read/write values of bitmaps.
+
+=Creating a Bitmap=
+To create a bitmap you can use the <code>BmpCreate</code>
+
+<syntaxhighlight lang="vb">
+call bmpcreate(index, picid, useScreenCoords, isVisible, sx, sy, sw, sh, destx, desty, stretchx, stretchy, centerx, centery, angle, color)
+</syntaxhighlight>
+
+For more information visit the [[Functions_(TeaScript)#BmpCreate|BmpCreate ]] documentation.
+=Using the Bitmap Class=
+To read the value of <code>Bitmap</code> use:
+<syntaxhighlight lang="vb">
+Bitmap(index).name
+</syntaxhighlight>
+
+To change the value of <code>Bitmap</code> use:
+<syntaxhighlight lang="vb">
+Bitmap(index).name = value
+</syntaxhighlight>
+
+Where index is an unique identifier defined when creating the bitmap object.
+
+=Bitmap Properties=
+=====Physical Properties=====
+{{Tea_table|1=  
+  {{Tea_row|double|destx|-|The x position of the bitmap.}}
+  {{Tea_row|double|desty|-|The y position of the bitmap.}}
+  {{Tea_row|double|scalex|-|The horizontal stretch ration. (e.g. 1: default size, 2:double size, 0.5: half size}}
+  {{Tea_row|double|scaley|-|The horizontal stretch ration. (e.g. 1: default size, 2:double size, 0.5: half size}}
+  {{Tea_row|double|rotatang|-|Rotates the bitmap in counter-clockwise in radians.}}
+}}
+
+=====Behavioral Properties=====
+{{Tea_table|1=  
+  {{Tea_row|double|attscreen|-|Determines if the bitmap uses scene or screen coordinates (0:scene, 1: screen).}}
+  {{Tea_row|double|scrx|-|Determines the top left x position in the source image.}}
+  {{Tea_row|double|scry|-|Determines the top left y position in the source image.}}
+  {{Tea_row|double|scrwidth|-|Determines the width loaded in the source image.}}
+  {{Tea_row|double|scrheight|-|Determines the height loaded in the source image.}}
+  {{Tea_row|double|rotatx|-|The x position of the anchor used for scaling and rotating.}}
+  {{Tea_row|double|rotaty|-|The y position of the anchor used for scaling and rotating.}}
+}}
+
+=====Graphical Properties=====
+{{Tea_table|1=  
+  {{Tea_row|double|hide|-|Determines if the bitmap is rendered (0: show, 1:hide)}}
+  {{Tea_row|double|scrid|-|Determines the ID of the NPC used as the texture source.}}
+  {{Tea_row|double|zpos|-|The priority of the bitmap. Foreground is 0 and background is 1.}}
+  {{Tea_row|double|blendmode|-|Determines the blendmode of the bitmap. [Values listed below]}}
+  {{Tea_row|double|forecolor|-|An overlay hue added to the bitmap. Setting this value to 0 makes the player invisible, setting it to -1 returns it to default. Use the <code>rgba(red, green, blue, alpha)</code> function to choose a specific hue.}}
+  {{Tea_row|double|forecolor_r|-|The red value of the hue described in 'forecolor'. Should be a value between 0 to 255. Use this value to read and get only the red component.}}
+  {{Tea_row|double|forecolor_g|-|The green value of the hue described in 'forecolor'. Should be a value between 0 to 255. Use this value to read and get only the green component.}}
+  {{Tea_row|double|forecolor_b|-|The blue value of the hue described in 'forecolor'. Should be a value between 0 to 255. Use this value to read and get only the blue component.}}
+  {{Tea_row|double|forecolor_a|-|The alpha value of the hue described in 'forecolor'. Should be a value between 0 to 255. Use this value to read and get only the alpha component.}}
+}}
+=Constants=
+Here are a list of constants used by the Bitmap class
+
+{| class="wikitable"
+|+Blendmode Values
+!ID
+!Description
+|-
+|1
+|Black
+|-
+|3
+|Reddish
+|-
+|4
+|Negative Colors
+|-
+|9
+|Blue Cyan
+|-
+|10
+|Orange/Red
+|-
+|1289
+|Brighter Color
+|-
+|66050
+|Additive
+|-
+|66053
+|Additive + Alpha
+|-
+|197122
+|Subtractive
+|-
+|197125
+|Subtractive + Alpha
+|}
+
+=Oddities and Quirks=
+Below is a list of certain quirks bitmaps have that does not conform to standard behavior or simply other miscellaneous behavior.
+
+
+[[Category:TeaScript.vbs]]

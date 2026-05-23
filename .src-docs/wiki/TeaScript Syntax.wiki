@@ -1,0 +1,956 @@
+<!-- title: TeaScript Syntax -->
+<!-- pageid: 1168 -->
+<!-- revid: 7981 -->
+<!-- timestamp: 2022-03-04T23:11:21Z -->
+<!-- source: https://wohlsoft.ru/pgewiki/TeaScript_Syntax -->
+
+[[Category:TeaScript.vbs]]
+==Data Types and Variables==
+
+===User Variables===
+User variables can be access in the variable menu or by pressing ctrl+i. All of these variables must be created using this interface. 
+
+====Doubles & Strings====
+By clicking the <code>Add</code> button in the variable interface you create a user variable. 
+
+You may also select if the variable is a local or global <code>user variable</code>. Local <code>user variables</code> can only exist in a single level and the value is reset every time the level begins. Global variables save the value per level and remembers the value even after quitting the game.
+
+'''Variable Naming Standard'''
+
+*Names are not case sensitive.
+*Names must not contain spaces.
+*Names must be made using a combination of letters and numbers only.
+*Names must start with a letter
+
+<code>User variables</code> work in an unusual way compared to other scripting languages. A <code>user variable</code> has two sides, a <code>double</code> and a <code>string</code>. There are different methods to access each side<syntaxhighlight lang="vb" start="1">
+' By creating a variable called "myVar" in the interface you can...
+' === Access doubles
+'Local
+val(myVar) or v(myVar)
+
+'Global
+gval(myVar) or gv(myVar)
+
+'Local Concatenation in TXTCreate and Event Messages
+&val(myVar)
+
+'Global Concatenation in TXTCreate and Event Messages
+&gval(myVar)
+
+' === Access strings
+'Local
+str(myVar)
+
+'Global
+gstr(myVar)
+
+'Local Concatenation in TXTCreate and Event Messages
+$val(myVar)
+
+'Global Concatenation in TXTCreate and Event Messages
+$gvl(myVar)
+
+</syntaxhighlight><br /><syntaxhighlight lang="vb" line="1">
+' === Example
+
+v(myVar) = 5
+str(myVar) = "Hello"
+
+v(myVar) = v(myVar) + 2
+str(myVar) =  str(myVar) & " World"
+
+' v(myVar) now has the value of 7
+' str(myVar) now has the value of "Hello World"
+' Notice how a user variable simultaneously hold a double and a string at the same time. The double side does not interfere with the string side and vice versa.
+</syntaxhighlight>Note how a <code>user variable</code> simultaneously can hold a <code>double</code> and a <code>string</code>.
+
+===Arrays===
+By clicking <code>Add</code> while holding shift in the variable interface you create a <code>user array</code>. Currently, <code>user arrays</code> can only contain <code>double</code> values. <code>User arrays</code> must first be initialized using the redim <code>function</code> before usage.<syntaxhighlight lang="vb">
+' By creating an array called "myArr" in the interface you can... 
+' Initialize the array using redim 
+' Read documentation on redim for more information
+call redim(0, myArr, ARRAY_LENGHT) 
+' Access value of an array at an index 
+array(myArr(index)) = value
+
+'Arrays do accept strings too, using the next method
+strarray(myArr(index)) = "string"
+
+</syntaxhighlight><syntaxhighlight lang="vb">
+' === Example
+call redim(0, myArr, 3) 
+array(myArr(1)) = 5 
+array(myArr(2)) = 7 
+array(myArr(3)) = array(myArr(1)) + array(myArr(2)) 
+' The array now has the following values of [5, 7, 12]
+</syntaxhighlight>
+
+===Dim Variables===
+<code>Dim variables</code> are a different way of creating and interacting with variables compared to user variables. A <code>dim variable</code> can only have a single type of data that must be defined on creation. Variable naming standards are the same as <code>user variables</code>, except you may not use the same name of other existing <code>functions</code> and <code>keywords</code>. If a <code>dim variable</code> is initialized without a value, it defaults to 0 or "" depending on the type. <syntaxhighlight lang="vb">
+' You can initialize a variable 
+dim varName as type
+
+' You can initialize a variable with a defined value
+dim varName as type = value
+
+'Once initialized you just write the variable name to access it
+varName
+</syntaxhighlight><syntaxhighlight lang="vb" line="1">
+' === Example
+dim myDbl as double = 5
+dim myStr as string = "Hello"
+
+myDbl= myDbl*5
+myStr = myStr & " World"
+
+'myDbl has the value of 25
+'myStr has the value of "Hello World"
+</syntaxhighlight><br />Here is a list of all the different types of dim variables. While TeaScript offers all these types, it is recommended to stick with integer <code>integer</code>, <code>double</code>, and <code>string</code>.<syntaxhighlight lang="vb">
+' === List of types ===
+dim a as byte    ' Allows from -128 to 127 (integers only)
+dim b as integer ' Allows from -32768 to 32767 (integers only)
+dim c as long    ' Allows from -2147483648 to 2147483647 (integers only)
+dim d as single  ' Allows from -3.402823E39 to 3.402823E38 (single precision floating point)
+dim e as double  ' Allows from -1.79769313486233E308 to 1.79769313486232E308 (double precision floating point)
+dim f as string  ' Stores string
+</syntaxhighlight>
+
+==Expressions==
+An expression is a line of code that evaluates to an answer. Something as simple as <code>1 + 1</code> is an expression. Teascript offers different tools to create diverse expressions that suit what you specifically need. 
+
+===Operators===
+
+====Mathematical Operators====
+{| class="wikitable" style="width: 100%;"
+! colspan="3" style="font-size:large; background-color:#9b59b6; color:#ffffff;" |Mathematical Symbols
+|-
+! style="font-weight:bold; font-size:medium; background-color:#efefef;width:8%;" |Symbol
+! style="text-align: center; font-weight:bold; font-size:medium; background-color:#efefef;width:25%;" |Name
+! style="font-weight:bold; font-size:medium; background-color:#efefef;" |Example
+|-
+| +
+| style="text-align: center;" |Addition
+|<syntaxhighlight lang="vb">
+12 + 2 + 3 'returns 17
+</syntaxhighlight>
+|-
+| style="background-color:#efefef;" | -
+| style="text-align: center; background-color:#efefef;" |Subtraction
+| style="background-color:#efefef;" |<syntaxhighlight lang="vb">
+12 - 2 - 3 'returns 7
+</syntaxhighlight>
+|-
+|*
+| style="text-align: center;" |Multiplication
+|<syntaxhighlight lang="vb">
+12*2*5 'returns 120
+</syntaxhighlight>
+|-
+| style="background-color:#efefef;" |/
+| style="text-align: center; background-color:#efefef;" |Division
+| style="background-color:#efefef;" |<syntaxhighlight lang="vb">
+'Note that division by 0 will crash SMBX 
+12/2/5 'returns 1.2
+</syntaxhighlight>
+|-
+|\
+| style="text-align: center;" |Division with no remainder
+|<syntaxhighlight lang="vb">
+'Note that division by 0 will crash SMBX
+12\2\5 'returns 1
+</syntaxhighlight>
+|-
+| style="background-color:#efefef;" |^
+| style="text-align: center; background-color:#efefef;" |Power
+| style="background-color:#efefef;" |<syntaxhighlight lang="vb">'Note that 0^0 will return 1
+12^2 'returns 144</syntaxhighlight>
+|-
+|mod
+| style="text-align: center;" |Modulus
+|<syntaxhighlight lang="vb">'Note that modulating by 0 will crash SMBX
+12 mod 5 'returns 2</syntaxhighlight>
+|-
+| style="background-color:#efefef;" |&
+| style="text-align: center; background-color:#efefef;" |Concatenation
+| style="background-color:#efefef;" |<syntaxhighlight lang="vb">"ABC" & ";" & "123" 'returns "ABC;123"</syntaxhighlight>
+|-
+|( )
+| style="text-align: center;" |Parenthesis
+|<syntaxhighlight lang="vb">12*(2 + 5) 'returns 84</syntaxhighlight>
+|-
+| style="background-color:#efefef;" |<<
+| style="text-align: center; background-color:#efefef;" |Shift left
+| style="background-color:#efefef;" |<syntaxhighlight lang="vb">
+32 << 1 'returns 64
+</syntaxhighlight>
+|-
+|>>
+| style="text-align: center;" |Shift right
+|<syntaxhighlight lang="vb">
+32 >> 1 'returns 16
+</syntaxhighlight>
+|}
+
+====Comparing Operators====
+Note that all <code>comparative operators</code> require both sides use the same data type. You can compare numbers with other numbers and strings with other strings, but you cannot compare numbers with strings.
+{| class="wikitable" style="width: 100%;"
+! colspan="3" style="font-size:large; background-color:#9b59b6; color:#ffffff;" |Comparitive Operators
+|-
+| style="font-weight:bold; font-size:medium; background-color:#efefef;" |Symbol
+| style="font-weight:bold; font-size:medium; background-color:#efefef;" |Name
+| style="font-weight:bold; font-size:medium; background-color:#efefef;" |Description
+|-
+| rowspan="2" |=
+| rowspan="2" |Equal
+|'''Numbers''' Returns -1 if both sides are equal, otherwise 0
+|-
+|'''Strings''' Returns -1 if both sides are equal, otherwise 0
+|-
+| rowspan="2" style="background-color:#efefef;" |<>
+| rowspan="2" style="background-color:#efefef;" |Not equal
+| style="background-color:#efefef;" |'''Numbers''' Returns -1 if both sides are not equal, otherwise 0
+|-
+| style="background-color:#efefef;" |'''Strings''' Returns -1 if both sides are not equal, otherwise 0
+|-
+| rowspan="2" |>
+| rowspan="2" |Grater than
+|'''Numbers''' Returns -1 if the value on the left is larger, otherwise 0
+|-
+|'''Strings''' Unknown pattern
+|-
+| rowspan="2" style="background-color:#efefef;" |<
+| rowspan="2" style="background-color:#efefef;" |Less than
+| style="background-color:#efefef;" |'''Numbers''' Returns -1 if the value on the left is smaller, otherwise 0
+|-
+| style="background-color:#efefef;" |'''Strings''' Unknown pattern
+|-
+| rowspan="2" |>=
+| rowspan="2" |Greater than or equal
+|'''Numbers''' Returns -1 if the value on the left is larger or equal, otherwise 0
+|-
+|'''Strings''' Unknown pattern
+|-
+| rowspan="2" style="background-color:#efefef;" |<=
+| rowspan="2" style="background-color:#efefef;" |Less than or equal
+| style="background-color:#efefef;" |'''Numbers''' Returns -1 if the value on the left is smaller or equal, otherwise 0
+|-
+| style="background-color:#efefef;" |'''Strings''' Unknown pattern
+|-
+| rowspan="2" style="background-color:#efefef;" |like
+| rowspan="2" style="background-color:#efefef;" |Like
+| style="background-color:#efefef;" |'''Numbers''' Not compatible, crashes the game
+|-
+| style="background-color:#efefef;" |'''Strings''' https://docs.microsoft.com/en-us/dotnet/visual-basic/language-reference/operators/like-operator
+|}
+
+====Logical Operators====
+<code>Logical operators</code> only work on numbers. They are commonly used with -1 and 0 to represent true and false respectively. Other numbers can be used but it may yield different patterns.
+
+{| class="wikitable" style="width: 100%;"
+! colspan="9" style="font-size:large; background-color:#9b59b6; color:#ffffff;" |Logical Operators
+|-
+| style="font-weight:bold; font-size:medium; background-color:#efefef;" |P
+| style="font-weight:bold; font-size:medium; background-color:#efefef;" |Q
+| style="font-size:medium; background-color:#efefef;" |
+| style="font-weight:bold; font-size:medium; background-color:#efefef;" |not P
+| style="font-weight:bold; font-size:medium; background-color:#efefef;" |P and Q
+| style="font-weight:bold; font-size:medium; background-color:#efefef;" |P or Q
+| style="font-weight:bold; font-size:medium; background-color:#efefef;" |P xor Q
+| style="font-weight:bold; font-size:medium; background-color:#efefef;" |P eqv Q
+| style="font-weight:bold; font-size:medium; background-color:#efefef;" |P imp Q
+|-
+|0
+|0
+|
+| -1
+|0
+|0
+|0
+| -1
+| -1
+|-
+| style="background-color:#efefef;" |0
+| style="background-color:#efefef;" | -1
+| style="background-color:#efefef;" |
+| style="background-color:#efefef;" | -1
+| style="background-color:#efefef;" |0
+| style="background-color:#efefef;" | -1
+| style="background-color:#efefef;" | -1
+| style="background-color:#efefef;" |0
+| style="background-color:#efefef;" | -1
+|-
+| -1
+|0
+|
+|0
+|0
+| -1
+| -1
+|0
+|0
+|-
+| style="background-color:#efefef;" | -1
+| style="background-color:#efefef;" | -1
+| style="background-color:#efefef;" |
+| style="background-color:#efefef;" |0
+| style="background-color:#efefef;" | -1
+| style="background-color:#efefef;" | -1
+| style="background-color:#efefef;" |0
+| style="background-color:#efefef;" | -1
+| style="background-color:#efefef;" | -1
+|}<br />
+===Special Values===
+These special values behave like numbers.
+{| class="wikitable" style="width: 50%;"
+! colspan="2" style="font-size:large; background-color:#9b59b6; color:#ffffff;" |Special Values
+|-
+| style="font-weight:bold; font-size:medium; background-color:#efefef;" |Name
+| style="font-weight:bold; font-size:medium; background-color:#efefef;" |Value
+|-
+|pi
+|3.141592654
+|-
+| style="background-color:#efefef;" |e
+| style="background-color:#efefef;" |2.71828182
+|-
+|rnd
+|A random number between 0 and 1. The value changes every time the variable is accessed.
+|}
+
+===Built-in Functions===
+<code>Functions</code> are powerful tools that allow you to simplify and expand the flexibility of your scripts. To access a <code>function</code>, you write the function name and in parenthesis write the parameters separated by commas. You can put <code>functions</code> inside an <code>expression</code> just as it were a regular number or string.
+
+For a list of <code>custom functions</code> created by the community check [[Custom Extra Scripts (TeaScript)|here]].<syntaxhighlight lang="vb">
+myFunc(param1, param2, ..., paramN)
+</syntaxhighlight><syntaxhighlight lang="vb" line="1">
+' === Example
+dim x as integer = -5
+dim y as integer
+y = abs(x) + 1  
+' x returns -5; y returns 6
+' Note how the abs() function is used
+</syntaxhighlight>These are the the mathematical <code>functions</code> provided in TeaScript. 
+
+Parameters can be <u>numbers,</u> ''strings'', and '''arrays'''.
+
+{| class="wikitable" style="width: 100%;"
+! colspan="3" style="font-size:large; background-color:#9b59b6; color:#ffffff;" |Functions
+|-
+! style="font-weight:bold; font-size:medium; background-color:#efefef;width:32%;" |Name and Parameters
+! style="text-align: center; font-weight:bold; font-size:medium; background-color:#efefef;width:8%;" |Return Type
+! style="font-weight:bold; font-size:medium; background-color:#efefef;width:60%;" |Description and Example
+|-
+|'''abs'''(<u>x</u>)
+| style="text-align: center;" |Number
+|Returns the absolute value of a number
+<syntaxhighlight lang="vb">abs(-3) 'returns 3</syntaxhighlight>
+|-
+| style="background-color:#efefef;" |'''exp'''(<u>x</u>)
+| style="text-align: center; background-color:#efefef;" |Number
+| style="background-color:#efefef;" |Returns the number to the power of the ''e'' constant
+<syntaxhighlight lang="vb">exp(5) 'returns e^5</syntaxhighlight>
+|-
+|'''log'''(<u>x</u>)
+| style="text-align: center;" |Number
+|Returns the log of the number with a base of ''e''
+<syntaxhighlight lang="vb">log(e) 'returns 1</syntaxhighlight>
+|-
+| style="background-color:#efefef;" |'''sgn'''(<u>x</u>)
+| style="text-align: center; background-color:#efefef;" |Number
+| style="background-color:#efefef;" |Returns the sign of the number (1, -1, or 0)
+<syntaxhighlight lang="vb">sgn(10)  'returns 1
+sgn(0)   'returns 0
+sgn(-10) 'returns -1</syntaxhighlight>
+|-
+|'''int'''(<u>x</u>)
+| style="text-align: center;" |Number
+|Returns the number rounded down. Similar to the common floor function
+<syntaxhighlight lang="vb">int(2.2) 'returns 2
+int(-2.2) ' returns -3</syntaxhighlight>
+|-
+| style="background-color:#efefef;" |'''fix'''(<u>x</u>)
+| style="text-align: center; background-color:#efefef;" |Number
+| style="background-color:#efefef;" |Removes the decimal portion of the number. Not to be confused with the <code>int()</code> function,
+<syntaxhighlight lang="vb">fix(2.2) 'returns 2
+fix(-2.2) ' returns -2</syntaxhighlight>
+|-
+|'''sqr'''(<u>x</u>)
+| style="text-align: center;" |Number
+|Returns the square root of a number
+<syntaxhighlight lang="vb">sqr(9) 'returns 3</syntaxhighlight>
+|-
+| style="background-color:#efefef;" |'''sin'''(<u>x</u>)
+| style="text-align: center; background-color:#efefef;" |Number
+| style="background-color:#efefef;" |Returns the sine of the number. Uses radians
+<syntaxhighlight lang="vb">sin(pi) 'returns 0</syntaxhighlight>
+|-
+|'''cos'''(<u>x</u>)
+| style="text-align: center;" |Number
+|Returns the cosine of the number. Uses radians
+<syntaxhighlight lang="vb">cos(pi) 'returns 1</syntaxhighlight>
+|-
+| style="background-color:#efefef;" |'''tan'''(<u>x</u>)
+| style="text-align: center; background-color:#efefef;" |Number
+| style="background-color:#efefef;" |Returns the tangent of the number Uses radians
+<syntaxhighlight lang="vb">tan(pi/4) 'returns 1</syntaxhighlight>
+|-
+|'''atn'''(<u>x</u>)
+| style="text-align: center;" |Number
+|Returns the inverse tangent of the number. Uses radians
+<syntaxhighlight lang="vb">atn(1) 'returns pi/4</syntaxhighlight>
+|-
+| style="background-color:#efefef;" |'''getangle'''(<u>x</u>, <u>y</u>)
+| style="text-align: center; background-color:#efefef;" |Number
+| style="background-color:#efefef;" |Returns the angle (from 0 to 1) formed between the triangle. Similar to the common atan2 function.
+<syntaxhighlight lang="vb">getangle(1, 0)  'returns 0
+getangle(1, 1)  'returns .125
+getangle(0, 1)  'returns .25
+getangle(-1, 0) 'returns 0.5
+getangle(0, -1) 'returns 0.75
+</syntaxhighlight>
+|-
+|'''rgba'''(<u>red</u>, <u>green</u>, <u>blue</u>, <u>alpha</u>)
+| style="text-align: center;" |Number
+|Returns an SMBX color value. Parameters must be between 0 and 255
+<syntaxhighlight lang="vb">rgba(255, 255, 255, 255) 'returns -1</syntaxhighlight>
+|-
+| style="background-color:#efefef;" |'''round'''(<u>x</u>, <u>decimal place</u>)
+| style="text-align: center; background-color:#efefef;" |Number
+| style="background-color:#efefef;" |Returns the number rounded<syntaxhighlight lang="vb">
+round(1.3456, 2) 'returns 1.35
+</syntaxhighlight>
+|-
+|'''len'''(''txt'')
+| style="text-align: center;" |Number
+|Returns the length of the text
+<syntaxhighlight lang="vb">len("ABC") 'returns 3
+len(123) 'returns 3</syntaxhighlight>
+|-
+| style="background-color:#efefef;" |'''left'''(''txt'', <u>len</u>)
+| style="text-align: center; background-color:#efefef;" |String
+| style="background-color:#efefef;" |Returns the text cropped from the string inputted. The crop begins from the start and ends with the length specified.<syntaxhighlight lang="vb">
+left("Hello", 2) ' Returns "He"
+</syntaxhighlight>
+|-
+|'''right'''(''txt'', <u>len</u>)
+| style="text-align: center;" |String
+|Returns the text cropped from the string inputted. The crop ends from the end and begins with the length specified.<syntaxhighlight lang="vb">
+right("Hello", 3) ' Returns "llo"
+</syntaxhighlight>
+|-
+| style="background-color:#efefef;" |'''mid'''(''txt'', <u>start</u>, <u>len</u>)
+| style="text-align: center; background-color:#efefef;" |String
+| style="background-color:#efefef;" |Returns the text cropped at the specified start and has the specified length provided. <syntaxhighlight lang="vb">
+mid("Hello", 2, 3) ' Returns "ell"
+</syntaxhighlight>
+|-
+| style="background-color:#efefef;" |'''asc'''(''char'')
+| style="text-align: center; background-color:#efefef;" |Number
+| style="background-color:#efefef;" |Returns the ANSI code. It will use the first character if more than one is passed<syntaxhighlight lang="vb">
+asc("A")  ' Returns 65
+</syntaxhighlight>
+|-
+|'''chr'''(<u>code</u>)
+| style="text-align: center;" |String
+|Returns a string using the ANSI code. Accepts 0-255<syntaxhighlight lang="vb">
+chr(65)  ' Returns "A"
+</syntaxhighlight>
+|-
+| style="background-color:#efefef;" |'''ascw'''(''char'')
+| style="text-align: center; background-color:#efefef;" |Number
+| style="background-color:#efefef;" |Returns the unicode code. It will use the first character if more than one is passed<syntaxhighlight lang="vb">
+ascw("A")  ' Returns 65
+</syntaxhighlight>
+|-
+|'''chrw'''(<u>code</u>)
+| style="text-align: center;" |String
+|Returns a string using the unicode code. Accepts 0-65535<syntaxhighlight lang="vb">
+chrw(65) ' Returns "A"
+</syntaxhighlight>
+|-
+| style="background-color:#efefef;" |'''cstr'''(<u>num</u>)
+| style="text-align: center; background-color:#efefef;" |String
+| style="background-color:#efefef;" |Converts the number to a string<syntaxhighlight lang="vb">
+cstr(1)  ' Returns "1"
+</syntaxhighlight>
+|-
+| style="background-color:#efefef;" |'''cdbl'''(<u>text</u>)
+| style="text-align: center; background-color:#efefef;" |String
+| style="background-color:#efefef;" |Converts the string to a number<syntaxhighlight lang="vb">
+cdbl("1")  ' Returns 1
+</syntaxhighlight>
+|-
+|'''uCase'''(''text'')
+|String
+|Returns a string in uppercase<syntaxhighlight lang="vb.net">
+uCase("hi!")  ' Returns "HI!"
+</syntaxhighlight>
+|-
+|'''lCase'''(''text'')
+| style="text-align: center;" |String
+|Returns a string in lowercase<syntaxhighlight lang="vb.net">
+lCase("HI!")  ' Returns "hi!"
+</syntaxhighlight>
+|-
+|'''instr'''(<u>start</u>, ''txt'', ''search'')
+| style="text-align: center;" |Number
+|To return the point of the first appearance of a given string in another string.
+
+<br>'''start''' To specify the start point of the search
+<br>'''txt''' The original string
+<br>'''search''' The string to be searched<syntaxhighlight lang="vb">
+instr(1, "abcde", "b") ' Returns 2
+</syntaxhighlight>
+|-
+|'''Format'''(''format'', <u>value</u>)
+| style="text-align: center;" |String
+|To return the value as a string in a specific format.
+'''format''' can be :
+<br>- "%Xz" to return the value with a certain number of figures.
+<syntaxhighlight lang="vb">
+format("%6z", 143) ' Returns 000143
+</syntaxhighlight>
+- "%h" to convert the decimal value into a hexadecimal value.
+<syntaxhighlight lang="vb">
+format("%h", 255) ' Returns FF
+</syntaxhighlight>
+|-
+|'''ubound'''('''array''')
+| style="text-align: center;" |Number
+|Returns the length of the array<syntaxhighlight lang="vb">
+call redim(0, myArr, 3)
+ubound(myArr) ' Returns 3
+</syntaxhighlight><br />
+|}
+
+==Control Flow==
+When a <code>script</code> is run in TeaScript it will start reading the <code>script</code> from top to bottom, left to right. It will read and execute the code in that order. the following is a list of ways to customize and manipulate what code gets executed in your <code>scripts</code>.
+
+===Declarations===
+A <code>declaration</code> is when you set a value to a variable. This applies to <code>user variables</code>, <code>dim variables</code>, and other values.<syntaxhighlight lang="vb">
+' Basic form of a declaration
+' The variable is written in the left
+' The value you want set is written in the right
+variable = value
+</syntaxhighlight><syntaxhighlight lang="vb" line="1">
+' === Examples
+v(myVar) = 5
+dim x as integer
+dim y as double = 10
+sysval(score) = 0
+x = v(myVar) + 10
+NPC(1).xsp = 0
+</syntaxhighlight>
+
+===Conditions===
+<code>Conditions</code> represent true and false.  In Teascript, -1 and 0 represents true and false. Any number that is not 0 may also represent true, but use -1 and 0 for consistency reasons.<syntaxhighlight lang="vb" line="1">
+' === Examples
+
+-1  ' Represents True
+0   ' Represents False
+5   ' Represents True (because non-zero numbers represent true)
+
+dim w as integer = -1
+dim x as integer = 5
+dim y as integer = 5
+dim z as integer = 0
+
+w    ' Represents True (because w has the value of -1)
+x    ' Represents True (because x has a value of a non-zero number)
+y    ' Represents True (because y has a value of a non-zero number)
+z    ' Represents False (because z has a value of 0)
+
+z - 1    ' Represent True (because 0 - 1 = -1)
+w + 1    ' Represent False (because -1 + 1 = 0)
+
+' Using logical operators 
+not w          ' Represent False
+not (y and z)  ' Represents True
+w or z         ' Represents True
+</syntaxhighlight>
+
+===If Statements===
+The <code>if statement</code> is a basic but useful statement. It has one parameter being a <code>condition</code>.
+<syntaxhighlight lang="vb">
+' Basic if statement
+if conditon then
+  statement
+end if
+
+' Shortcut if statement
+if condition then statement
+
+' If statement using one elseif and an else statement
+if conditon then
+  statement
+elseif condition then
+  statement
+...    ' You can have as many elseif as you want 
+else
+  statement
+end if
+</syntaxhighlight>
+When TeaScript reads an <code>if statement</code> it will check each <code>condition</code> from top to bottom until it reaches a <code>condition</code> that is true. When it reaches a <code>condition</code> that is true, it will execute the <code>statements</code> inside and continue the code after the entire <code>if statement</code>. This means that <code>conditions</code> written on the top will have priority over those <code>conditions</code> in the bottom.
+
+The <code>else</code> is special since it does not require any <code>conditions</code>. An <code>else</code> must be written in the bottom after all other <code>elseif</code> statements (if there are any). The code inside the <code>else</code> will only run if every other <code>condition</code> in the  <code>if</code> and <code>elseif</code> statements evaluated to false.<syntaxhighlight lang="vb" line="1">
+' === Example
+dim x as integer = 0
+dim y as integer = -1
+dim z as integer = -1
+
+' Since (x and y) evaluates to 0, this statement is not run.
+if x and y then z = 0
+
+' Since (x and z) evaluates to 0, this statement is not run.
+if x and z then
+  y = 0
+
+' Since (y) evaluates to -1, this statement is run.
+elseif y then
+  x = -1
+
+' Since the previous elseif has priority and only one statement can be run, this statement is not run
+else
+  z = -1
+end if
+
+</syntaxhighlight>
+
+===Select Case Statements===
+<code>Select Case</code> lets you easily organize the control flow based on a value. It has one parameter being a value.
+<syntaxhighlight lang="vb">
+select case value
+  case -1
+    statement ' Will run if value is exactly -1
+  case 0 to 1
+    statement ' Will run if value is between (inclusive) 0 and 1
+  case is < -1
+    statement ' Will run if value is less than negative one
+  case 2, 3, 4
+    statement ' Will run if value is exactly 2, 3 or 4
+  case "example"
+    statement ' Will run if value is exactly "example".
+  case else
+    statement ' Will run if value does not match any of the other conditions
+end select</syntaxhighlight>
+
+<code>Select case</code> at its core is similar to various <code>if statements</code> and behaves similarly to the common "switch" statement in other languages. It will read the value that is passed and executes the first code in which the value matches. It will read the cases from top to bottom giving priority to cases at the top. 
+
+The <code>to</code> keyword can be used when checking for a case.
+
+*'''Numbers''' Will be true if the value is between (inclusive) the two numbers provided.
+*'''Strings''' Unknown pattern
+
+The <code>is</code> keyword can be used to make comparisons to the value. It can be used with  the <code><, >, <=,</code> or <code>>=</code> logical operators. 
+
+You can use commas to check for multiple cases at once. The commas behave similarly to an <code>or</code> logical operator. The case will go through if it matches with any of the cases.
+
+===With Statements===
+<code>With statements</code> are useful to read or write on multiple properties of an object. An object can be for example an NPC, Block, or BGO. Check the classes section for more information on SMBX Objects. You can acess all of the properties by typing a <code>.</code> followed by the property name.
+<syntaxhighlight lang="vb">
+with object
+  .property_name
+end with
+</syntaxhighlight>
+<br />
+<syntaxhighlight lang="vb">
+' === Example
+with NPC(1)
+  .x = 12345
+  .y = 54321
+  .forecolor = rgba(10, 60, 60, 255)
+  v(myVar) = .ysp
+end with
+
+' This is equivalent to:
+  NPC(1).x = 12345
+  NPC(1).y = 54321
+  NPC(1).forecolor = rgba(10, 60, 60, 255)
+  v(myVar) = NPC(1).ysp
+</syntaxhighlight>
+
+===Goto===
+Using <code>goto</code> will force the script to jump to a specific line to a specific label. The label name must be followed by <code>:</code>.  <code>Goto</code> does not work inside <code>with statements</code>.
+<syntaxhighlight lang="vb">
+Example:
+
+goto Example
+</syntaxhighlight>
+<br />
+
+===GoSub===
+Using <code>gosub</code> will force the script to jump to a specific line to a specific label. Teascript will remember where the jump happened and can be returned by using  <code>return</code>.The label name must be followed by <code>:</code>.  <code>Gosub</code> does not work inside <code>with statements</code>.
+
+<syntaxhighlight lang="vb">
+Example:
+
+gosub Example
+return  ' When it reaches this line, it will return back to the first line
+
+</syntaxhighlight><syntaxhighlight lang="vb">
+' === Example
+gosub Example
+call showMsg("b")
+
+Example:
+call showMsg("a")
+return 
+' Take note of the order the messages are shown
+</syntaxhighlight>
+
+==Loops==
+A loop allows you to run a piece of code multiple times. Teascript is very flexible in the type of loops you can create. 
+
+It is important to note that you should avoid an infinite loop. Creating an infinite loop will freeze the game. Make sure to either have a [[Functions_(TeaScript)#Sleep|<code>sleep</code>]] function (if the script was called by an event) or an <code>exit</code>. 
+===Pure Loops===
+A <code>pure loop</code> is a very simple and basic form of a loop. It will run indefinitely.
+<syntaxhighlight lang="vb">
+'Pure loop:
+do
+  statement
+loop
+</syntaxhighlight><syntaxhighlight lang="vb" line="1">
+' === Example
+' Calling this script once will run the code every tick
+do
+  statement
+  call sleep(1)
+loop
+
+</syntaxhighlight>
+
+===While Loops===
+A <code>while loop</code> will continue the loop while the <code>condition</code> is <code>true</code>. You can set up a <code>while loop</code> in 2 different ways. The difference is by when the loop checks its condition. If you place the <code>while</code> at the bottom, you guarantee then code will be run at least once.<syntaxhighlight lang="vb">
+do while condition
+  statement
+loop
+
+do
+  statement
+loop while condition
+</syntaxhighlight><syntaxhighlight lang="vb" line="1">
+' === Example
+dim x as integer
+
+x = 0
+do while x < 5
+  x = x + 1
+loop
+
+x = 0
+do 
+  x = x + 1
+loop while x < 5
+
+' Both loops ran 5 times
+</syntaxhighlight>
+
+===Until Loops===
+An <code>until loop</code> will continue the loop until the <code>condition</code> is <code>true</code>. You can set up an <code>until loop</code> in 2 different ways. The difference is by when the loop checks its condition. If you place the <code>until</code> at the bottom, you guarantee then code will be run at least once.<syntaxhighlight lang="vb">
+do until condition
+  statement
+loop
+
+do
+  statement
+loop until condition
+</syntaxhighlight><syntaxhighlight lang="vb" line="1">
+' === Example
+dim x as integer
+
+x = 0
+do until x = 5
+  x = x + 1
+loop
+
+x = 0
+do 
+  x = x + 1
+loop until x = 5
+
+' Both loops ran 5 times
+</syntaxhighlight>
+
+===For Loops===
+A <code>for loop</code> will run for a set amount of times. You declare a variable then will count the current iteration it is on. A <code>for loop</code> has 3 parameters and they are: <code>initial value</code>, <code>final value</code>, and <code>step value</code>.
+
+A <code>for loop</code> will continue to loop as long as your counter is less or equal to the <code>ending value</code>. The <code>for loop</code> will also stop if your counter is less than your <code>initial value</code>. For every iteration, your counter will increase by the <code>step value</code>. <syntaxhighlight lang="vb">
+for i = (initial value) to (ending value) step (step value)
+    statement
+next
+
+'step value is optional and defaults to 1 when omitted
+for i = (initial value) to (ending value)
+  statement
+next
+</syntaxhighlight>
+
+<br /><syntaxhighlight lang="vb" line="1">
+' === Example
+dim i as integer
+for i = 0 to 8 step 2
+  call showMsg(i)
+next
+
+' The messages displayed are: 0, 2, 4, 6, and 8
+</syntaxhighlight><br />
+
+===Continue===
+A <code>continue</code> statement will immediately begin the next iteration of a loop. 
+<syntaxhighlight lang="vb">
+dim i as integer
+
+for i = 1 to 10 
+  ' If the number is even then immideatly finish the loop and continue at the next iteration
+  if i % 2 = 0 then
+	continue
+  end if
+
+  ' Only odd numbers will be shown
+  call showMsg(i)
+next
+</syntaxhighlight>
+
+===Exit===
+An <code>exit</code> statement will terminate a loop of a script prematurely.
+<syntaxhighlight lang="vb">
+'This works inside a pure, while, or until loop
+exit do
+
+'This works inside a for loop
+exit for
+
+'This will force the game to stop immediately executing the script
+exit script
+</syntaxhighlight>
+
+==Scripts==
+Teascript allows you to create <code>custom script</code> function inside your scripts. This allows you to simplify your code and build tools to expand your script in a more organized manner. There are two types of <code>custom scripts</code> that both work very similarly.
+
+When setting up a <code>custom function</code> or <code>custom procedure</code>, all <code>scripts</code> and <code>parameters</code> names must follow '''variable naming standards''' with one exception. Script names must not contain numbers anywhere.
+
+====Function====
+A <code>custom function</code> allows you to create your own custom functions that behave similarly to the <code>built-in functions</code> shown above. You can add your own <code>custom functions</code> to simplify code or add your very own mathematical functions. You can have as many <code>parameters</code> as you want. You must define the type of data and the return type as shown below. If no <code>return</code> is found, then by default it will return 0 or "" depending on the return type. A <code>custom function</code> must be defined at the bottom of the script.<syntaxhighlight lang="vb.net" line="1">
+' type must be double or string
+script functionName(param1 as type, param2 as type, ..., return type)
+  ' to access a parameter, just type the name
+  return value
+end script
+</syntaxhighlight><syntaxhighlight lang="vb">
+' === Example
+
+dim x as integer = 5
+dim y as integer = 10
+dim z as integer
+
+z = max(5, 10)
+' z returns 10
+
+' This script returns the larger parameter
+script max(a as double, b as double, return double)
+  if a > b then return a
+  return b
+end script
+</syntaxhighlight><br />
+====Procedure====
+A <code>custom procedure</code> are similar to <code>custom functions</code> except they do not have a return value. Use custom procedures to create instructions that you want to repeat together. You can have as many <code>parameters</code> as you want. You must define the type of data as shown below. A <code>custom procedure</code> must be defined at the bottom of the script.<syntaxhighlight lang="vb">
+' type must be double or string
+script procedureName(param1 as type, param2 as type, ...)
+
+end script
+</syntaxhighlight><syntaxhighlight lang="vb" line="1">
+' === Example
+' This disables both types of jumps
+call setJumps(-1)
+
+' This enables both types of jumps
+call setJumps(0)
+
+script setJumps(x as double)
+  sysval(disablejump) = x
+  sysval(disablespinjump) = x
+end script
+</syntaxhighlight><br />
+===Export===
+<code>Export</code> allows you to export <code>custom functions</code> and <code>custom procedures</code> and make them global. Exported scripts can be accessed in any other script normally.<syntaxhighlight lang="vb">
+' This function can now be accessed in any script
+export script procedureName(param1 as type, param2 as type, ...)
+
+end script
+
+</syntaxhighlight>
+==Oddities and Quirks==
+The following is a list of oddities that you may experience when using TeaScript
+
+===='''Scriptptr'''====
+<code>Scriptptr</code> allows modifying the parameters of an existing script. It is likely that this function is in development, since it always returns an error.<syntaxhighlight lang="vb">
+call showmsg(hello("a"))
+
+script hello(t as double, return double)
+return 0 
+scriptptr hello(t as string, return double)
+return -1
+end 
+</syntaxhighlight>
+
+
+'''Negatives to a Non-Integer Power'''
+
+<code>sqr(x)</code> is equivalent to <code>x^(0.5)</code>. Therefore <code>(-1)^(0.5)</code> results in a complex number with a imaginary component. Teascript does not offer complex numbers in its data types.<syntaxhighlight lang="vb">
+dim x as integer = -1
+dim y as integer
+
+y = (-1)^(0.5) ' This returns an error when run.
+y = x^(0.5)    ' This does not error but will evaluate to 0
+</syntaxhighlight>'''Writing Double Quotation Marks'''<br>
+Since double quotation marks are reserved for defining string, you must use chr or chrW to write a double quotation mark inside a string.
+<syntaxhighlight lang="vb">
+str(myVar1) = chrW(34) '34 is the ID of the double quotation marks. (ID 34 works too in chr() too)
+
+'You can define a variable as a quotation mark or call the quotation mark directly, both work the same
+str(myVar2) = "These are some "&str(myVar1)&"special"&chrW(34)&" marks"
+
+'str(myVar2) is "These are some "special" marks"
+</syntaxhighlight>
+'''Using dim variables on global scripts'''<br>
+For some reason, using <code>long</code>, <code>single</code> or <code>double</code> types in global scripts will return an error when playing in start game mode.<br>
+However, <code>byte</code> and <code>integer</code> types work fine.<br>
+
+'''> THESE PROBLEMS ARE FIXED in 1.4.5 <'''
+
+'''Dim Variables in If Statements [fixed in patch 31!]'''
+
+If you initialize a dim variable inside an if statement, it will have a buggy effect. This is a bug in Teascript's side.<syntaxhighlight lang="vb">
+' This is a bug
+if -1 = -1 then
+    dim i as double = 1
+    call sysshowmsg(i,0,0)
+    dim j as double = i - 2
+    dim k as double = j + i
+    call sysshowmsg(i,0,0)
+    call sysshowmsg(j,0,0)
+    call sysshowmsg(k,0,0)
+end if
+</syntaxhighlight>
+
+'''Writing Decimal Numbers'''<br>
+When writing decimal number, you must include a number before the decimal point.
+<syntaxhighlight lang="vb">
+'Wrong
+v(myVar) = .1
+
+'Correct
+v(myVar) = 0.1
+</syntaxhighlight>
+
+
+'''Writing negative numbers'''<br>
+When writing a negative number, make sure there are no other symbols beforehand (except parenthesis). 
+<syntaxhighlight lang="vb">
+'Wrong (Teascript errors due to seeing * and - next to each other)
+v(myVar) = 5*-4
+
+'Correct
+v(myVar) = 5*(-4)
+v(myVar) = -4*5
+</syntaxhighlight>

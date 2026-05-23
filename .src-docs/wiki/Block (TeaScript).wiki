@@ -1,0 +1,125 @@
+<!-- title: Block (TeaScript) -->
+<!-- pageid: 1142 -->
+<!-- revid: 10470 -->
+<!-- timestamp: 2026-05-15T08:54:37Z -->
+<!-- source: https://wohlsoft.ru/pgewiki/Block_(TeaScript) -->
+
+[[Category:TeaScript.vbs]]
+Block is a class in TeaScript.vbs that allows you to read/write values for blocks.
+=Using the Block Class=
+To read the value of <code>Block</code> use: <syntaxhighlight lang="vb">
+Block(index).name
+</syntaxhighlight>
+
+To change the value of <code>Block</code> use: <syntaxhighlight lang="vb">
+Block(index).name = value
+</syntaxhighlight>
+
+=Block Properties=
+
+======Physical Properties======
+{{Tea_table|1=  
+  {{Tea_row|double|id|-|The ID is used to decide and tie in its graphics, behavior, and behaviour flags. You can change this value to change the block into another}}
+  {{Tea_row|double|x|-|The x coordinate of the NPC in scene coordinates.}}
+  {{Tea_row|double|y|-|The y coordinate of the NPC in scene coordinates.}}
+  {{Tea_row|double|width|-|The width of the block's hitbox.}}
+  {{Tea_row|double|height|-|The height of the block's hitbox.}}
+  {{Tea_row|double|xsp|-|The horizontal speed of the block. Negative values cause leftwards movement, positive values cause rightwards movement.}}
+  {{Tea_row|double|ysp|-|The vertical speed of the NPC. Negative values cause upwards movement, positive values cause downwards movement.}}
+  {{Tea_row|double|state|-|The current state of the block. Setting this to 1 will hit the block; anything else will break it. {{note|Breaking the block, whether through normal means or by code, does not affect the hide variable.}}}}
+  {{Tea_row|double|hide|-|Whether the block is hidden or not. {{note|This does not function the same way as destroying blocks.}}}}
+  {{Tea_row|double|pcollision|Read Only|The type of collision a player will have with the block, determined by block settings.}}
+  {{Tea_row|double|ncollision|Read Only|The type of collision an NPC will have with the block, determined by block settings.}}}}
+
+======Graphical Properties======
+{{Tea_table|1=  
+  {{Tea_row|double|extx|-|This values chooses the alternative GFX x position starting from 0. Setting this value to -1 makes the block invisible.}}
+  {{Tea_row|double|exty|-|This values chooses the alternative GFX y position starting from 0. Setting this value to -1 makes the block invisible.}}
+
+  {{Tea_row|double|forecolor|-|An overlay hue added to the block. Setting this value to 0 makes the NPC invisible, setting it to -1 returns it to default. Use the <code>rgba(red, green, blue, alpha)</code> function to choose a specific hue.}}
+  {{Tea_row|double|forecolor_r|-|The red value of the hue described in 'forecolor'. Should be a value between 0 to 255. Use this value to read and get only the red component.}}
+  {{Tea_row|double|forecolor_g|-|The green value of the hue described in 'forecolor'. Should be a value between 0 to 255. Use this value to read and get only the green component.}}
+  {{Tea_row|double|forecolor_b|-|The blue value of the hue described in 'forecolor'. Should be a value between 0 to 255. Use this value to read and get only the bluecomponent.}}
+  {{Tea_row|double|forecolor_a|-|The alpha value of the hue described in 'forecolor'. Should be a value between 0 to 255. Use this value to read and get only the alpha component.}}
+}}
+
+======Behavioral Properties======
+{{Tea_table|1=  
+  {{Tea_row|double|advset|-|The contents of the block. [[Block_(TeaScript)#Block_Contents|Here is a list of block contents.]]}}
+  {{Tea_row|double|haswing|-|A set of values pertaining to what kind of wings the block has. [[Block_(TeaScript)#Wing_Behavior|Here is a list of different wing behaviors.]]}}
+}}
+
+======Block Events======
+{{Tea_table|1=  
+  {{Tea_row|string|deathevent|-|The block will trigger the event/script when the block is destroyed.}}
+  {{Tea_row|string|hitevent|-|The block will trigger the event/script every time the block is hit.}}
+  {{Tea_row|string|onscreenevent|-|The block will trigger the event/script every frame the block is onscreen.}}
+  {{Tea_row|string|layerclearedevent|-|When the block gets destroyed while being the last object in the layer, it will trigger the event/script defined.}}
+}}
+
+======Other======
+{{Tea_table|  
+  {{Tea_row|string|name|-|An arbitrary string you can attach to the block.}} 
+}}
+
+====== Unknown ======
+{{Tea_table|{{Tea_row|double|prx|-|Unknown}}
+  {{Tea_row|double|pry|-|Unknown}}
+  {{Tea_row|double|stimer|-|Unknown}}}}
+
+======Unusable======
+{{Tea_table|  
+  {{Tea_row|unusable|scriptid|?|Unknown effect. Returns a "Too few/many arguments for function." script error.}}
+}}
+
+=Constants=
+
+Here is a list of constants used by the block class.
+
+======Block Contents======
+{| class="wikitable"
+!ID
+!Behavior
+|-
+|0
+|Empty
+|-
+|1 to 99
+|Coins (i.e. 15 will contain 15 coins)
+|-
+| -1 to -302
+|Contains varying number of coins
+|-
+|under -302
+|Empty (will transform on hit)
+|-
+|1XXX
+|NPC ID contained in the block. (i.e. 1031 contains NPC ID 31 (a key.)
+|}<br />
+
+======Wing Behavior======
+{| class="wikitable"
+!ID
+!Behavior
+|-
+|0
+|None
+|-
+|1
+|Hover Left/Right
+|-
+|2
+|Hover Up/Down
+|-
+|3
+|Hover Forward
+|-
+|4
+|Controlled by NPC-308
+|-
+|5
+|SMW Lines
+|}<br />
+
+=Oddities and Quirks=
+Below is a list of certain quirks certain blocks have that does not conform to standard behavior or simply other miscellaneous behavior.

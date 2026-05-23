@@ -1,0 +1,140 @@
+<!-- title: Autorun Events -->
+<!-- pageid: 1367 -->
+<!-- revid: 9615 -->
+<!-- timestamp: 2024-07-07T07:55:26Z -->
+<!-- source: https://wohlsoft.ru/pgewiki/Autorun_Events -->
+
+Autorun Events are events that automatically trigger under certain circumstances, with said circumstances depending on the name of the event. It can be added and modified like a normal event, and can even be called like one.<br />
+
+In order to add an Autorun Event, add an event, and either use the dropdown arrow next to the event name text box to select an Autorun Event, or manually type in the event name. The word "Event" above the text box should turn into red text that says "AutoRun-Events" if done correctly.
+{| class="wikitable"
+|+
+!Name
+!Description
+!Param1
+!Param2
+!Param3
+|-
+|Level - Start
+|Triggers when the level starts. This is one of the SMBX64 standard events when creating a new level and cannot be deleted or renamed through the editor.
+|0
+|0
+|0
+|-
+|P Switch - Start
+|Triggers when the SMW P-Switch is activated or if Special Event "PSwitch.Trigger" is called. This is one of the SMBX64 standard events when creating a new level.
+|Unknown. Returns 2 when activated through special event.
+|Unknown. Returns 3 when activated through special event.
+|0
+|-
+|P Switch - End
+|Triggers when the SMW P-Switch's effects wear off or if Special Event "PSwitch.Stop" is called. This is one of the SMBX64 standard events when creating a new level.
+|0
+|0
+|0
+|-
+|Level - End
+|Triggers when the player "finishes" a level. This does not mean the last frame of the level. This event triggers when the player dies or interacts with an object that ends the level.
+|The exit type.
+
+* 11 - SMB1 Normal Exit
+* 12 - SMB1 Secret Exit
+* 5 - SMB2 Orb Exit
+* 1 - SMB3 Roulette Exit
+* 2 - SMB3 Orb Exit
+* 7 - SMB3 Star Exit
+* 4 - SMW Key Exit
+* 8 - SMW Giant Gate Exit
+* 80 - "Bowser Defeat" End Game
+* 81 - "Finish Game" End Game
+* 6 - Warp Exit
+* 99 - All players died (including clones)
+* 88 - Battle Mode End
+|0
+|0
+|-
+|Player - GotHurt
+|Triggers when the player takes damage. This event also triggers when the player is hurt via system events. This event does not run if the player dies instead of taking damage.
+|The player index.
+|0
+|0
+|-
+|Player - GotItem
+|Triggers when the player collects a power-up. This only accounts for power-ups that change the status field of the player (NPCs like Kuribo's Shoe and F.L.U.D.D. do not call this event).
+
+This event runs before the player updates its power-up. You can access the power-up before the player updates by doing:<code>Char(sysval(param1)).status</code>
+|The player index.
+|The new status of the powerup.
+|0
+|-
+|Player - GotNPChurt
+|Triggers every frame the player is in collision with an NPC that damages the player. The player does not have to be hurt for this event to activate (for example, touching an enemy while having invisibility frames still activates this event). This event does not run if the player dies after being hit.
+|The player index.
+|0
+|0
+|-
+|Player - Swimming
+|Triggers every time the player enters either a water liquid or a custom water liquid.
+|The player index.
+|0
+|0
+|-
+|Player - Warping
+|Triggers when the player uses a warp.
+|The player index.
+|The warp index.
+|0
+|-
+|NPC - Death
+|Triggers when an NPC dies by any method. 
+
+This event runs before the NPC updates its death status. You can access the NPC by doing: NPC<code>(sysval(param1))</code>
+|The NPC index.
+|0
+|0
+|-
+|NPC - Killed
+|Triggers when an NPC dies due to an action of the player. This includes action such as stomping, player projectiles (fireball, hammer), hammers from a grabbed hammer bro, or stomped in statue form. This does not include killing an NPC by racoon's tail attack, billygun, toothie, FLUDD, freezing an NPC, killing a frozen NPC, or death from using a cannonball helmet.
+
+This event runs before the NPC updates its death status. You can access the NPC by doing: NPC<code>(sysval(param1))</code>
+|The NPC index.
+|0
+|0
+|-
+|Timer - Over
+|Triggers when the level’s timer reaches 0. This will prevent the player from being killed off if the event even exists.
+|0
+|0
+|0
+|-
+|Starman - Start
+|Triggers when a player grabs a Super Star. (Does not trigger when Peach or Link grab a Mega Mushroom, if Special Event "PlayerInvincibleStar.Activate" is called, or if the invtime sysval is set to a higher value.)
+|The Player index.
+|0
+|0
+|-
+|Starman - End
+|Triggers when the player’s Starman invincibility ends. (Does not work trigger if Special Event "PlayerInvincibleStar.Deactivate" is called.)
+|The player index.
+|0
+|0
+|-
+|Megamushroom - Start
+|Triggers when the player grabs a Mega Mushroom (does not work if Peach or Link grab it)
+|The Player index.
+|0
+|0
+|-
+|Megamushroom - End
+|Triggers when the player’s Mega Mushroom state ends.
+|The Player index.
+|0
+|0
+|-
+|Player - Death
+|Triggers when a player dies.
+|The Player index.
+|0
+|0
+|}
+[[Category:TeaScript.vbs]]

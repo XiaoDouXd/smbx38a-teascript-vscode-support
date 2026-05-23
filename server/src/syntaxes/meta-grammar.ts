@@ -4,12 +4,23 @@
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Position, CompletionItem, Diagnostic, Hover, CompletionParams } from 'vscode-languageserver/node';
-import { NoParamCallback } from 'fs';
 import { teaBuiltinKeywordCompletion, teaBuiltinTypesCompletion } from './tea-context';
-import { log } from 'console';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const linq = require('linq');
+// ---------------------------------------------------------------- 文档文本缓存
+/**
+ * 性能优化:
+ * 原本每个 PatternItem.match() 内都会调用 doc.getText().substring(off) 一次,
+ * 在 2000+ 行脚本下该路径会被调用数十万次, 形成 O(N^2) 复杂度.
+ * 这里用一个 WeakMap 在一次 grammar.match() 期间复用整篇文本.
+ */
+const _docTextCache: WeakMap<TextDocument, { ver: number, text: string }> = new WeakMap();
+function getDocText(doc: TextDocument): string {
+    const c = _docTextCache.get(doc);
+    if (c && c.ver === doc.version) return c.text;
+    const text = doc.getText();
+    _docTextCache.set(doc, { ver: doc.version, text });
+    return text;
+}
 
 type EmptyAction = () => void;
 type DocumentCompletionCallback = (match: MatchResult) => { items: CompletionItem[], isBreak: boolean };
@@ -90,7 +101,7 @@ class EmptyPattern extends PatternItem {
             /(((?:\s|\/\*(?!\/).*?\*\/)*)(\/\/.*[\r]?[\n]?)?)*/
             :
             /((?:[ \t]|\/\*(?!\/).*?\*\/)*)?/;
-        const text = doc.getText().substring(startOffset);
+        const text = getDocText(doc).substring(startOffset);
         const match = reg.exec(text);
 
         // match.index 是匹配结果的第一个字符在整一段文字中的索引位置
@@ -160,7 +171,7 @@ class RegExpPattern extends PatternItem {
             startOffset += skip[0].length;
 
         // 截取后面的字符
-        const text = doc.getText().substring(startOffset);
+        const text = getDocText(doc).substring(startOffset);
 
         // 通过该模板默认的正则表达式匹配
         const match = new MatchResult(doc, this);
@@ -408,7 +419,7 @@ class OptionalPatternSet extends OrderedPatternSet {
             match.matched = false;
             const unMatched = new UnMatchedPattern(doc, this, failedMatches);
             unMatched.startOffset = startOffset;
-            unMatched.endOffset = linq.from(failedMatches).max((match: MatchResult) => match.endOffset);
+            unMatched.endOffset = failedMatches.reduce((mx, m) => m.endOffset > mx ? m.endOffset : mx, 0);
             return unMatched;
         }
         else {
@@ -522,7 +533,7 @@ class ScopePattern extends OrderedPatternSet {
                         }
                     }
                     else {
-                        startOffset = linq.from(unMatched.allMatches).max((match: MatchResult) => match.endOffset);
+                        startOffset = unMatched.allMatches.reduce((mx, m) => m.endOffset > mx ? m.endOffset : mx, 0);
                         unMatched.endOffset = startOffset;
                     }
 
@@ -574,7 +585,7 @@ class Grammar extends ScopePattern {
             // 新建匹配结果
             const match = new GrammarMatchResult(doc, this);
             // 定位尾部
-            const end = doc.getText().length;
+            const end = getDocText(doc).length;
             match.startOffset = 0;
             while (startOffset != end) {
                 let hasMatched = false;
@@ -719,7 +730,7 @@ class MatchResult {
             return this;
 
         // 找到第一个包含 pos 位置的子段落(子匹配结果)
-        const child = linq.from(this.children).where((child: MatchResult) => child.startOffset <= offset && offset <= child.endOffset).firstOrDefault();
+        const child = this.children.find(c => c.startOffset <= offset && offset <= c.endOffset);
         if (!child)
             return this;
 
@@ -751,7 +762,7 @@ class PatternMatchResult extends MatchResult {
         if (this.children.length <= 0)
             return null;
 
-        return linq.from(this.allMatches).where((match: MatchResult) => match.patternName === name).toArray();
+        return this.allMatches.filter(m => m.patternName === name);
 
     }
 
@@ -844,10 +855,15 @@ class GrammarMatchResult extends ScopeMatchResult {
 
         if (!GrammarMatchResult.shieldKeywordCompletion)
             completions = completions.concat(teaBuiltinTypesCompletion).concat(teaBuiltinKeywordCompletion(pos));
-        completions = linq.from(completions)
-            .where((item: CompletionItem) => item !== undefined)
-            .distinct((comp: CompletionItem) => comp.label)
-            .toArray();
+        // 去重: 保留首个出现的 label, 同时过滤 undefined
+        const seen = new Set<string>();
+        completions = completions.filter(item => {
+            if (!item) return false;
+            const label = item.label;
+            if (seen.has(label)) return false;
+            seen.add(label);
+            return true;
+        });
 
         return completions;
     }
@@ -1052,7 +1068,7 @@ class UnMatchedPattern extends UnMatchedText {
     }
 
     getMatch(name: string): MatchResult[] {
-        return linq.from(this.allSubMatches).where((match: MatchResult) => match.patternName === name).toArray();
+        return this.allSubMatches.filter(m => m.patternName === name);
     }
 }
 

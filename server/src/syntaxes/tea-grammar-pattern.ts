@@ -13,9 +13,8 @@ import {
     exportFunc,
     globalValue
 } from './tea-context';
-import { LanguageGrammar, GrammarPatternDeclare, getMatchedProps, includePattern, MatchResult, PatternMatchResult, GrammarMatchResult } from './meta-grammar';
-import { CompletionItemKind, CompletionItem, ErrorMessageTracker } from 'vscode-languageserver';
-import { CallTracker, match } from 'assert';
+import { LanguageGrammar, GrammarPatternDeclare, getMatchedProps, includePattern, MatchResult, GrammarMatchResult } from './meta-grammar';
+import { CompletionItemKind, CompletionItem } from 'vscode-languageserver';
 
 // ----------------------------------------------------------------
 
@@ -56,37 +55,43 @@ GrammarMatchResult.completionPostProcessing = (items, params) => {
 }
 
 /** 获得对象类型 */
-function getObjectType(match: MatchResult, context: TeaContext): TeaType {
-    const reg = /([_a-zA-Z][_a-zA-Z0-9]*)(\([.]*\))*/;
+function getObjectType(match: MatchResult, context: TeaContext): TeaType | null {
+    if (!match || !context) return null;
+    const reg = /([_a-zA-Z][_a-zA-Z0-9]*)(\s*\(.*\))?/;
     let name = "";
 
+    // 处理点访问形态: prev.sub
     if (match.children && match.children.length === 2) {
         if (match.children[0].text === ".") {
             const prevIdx = match.parent.children.indexOf(match) - 1;
             const prevMatch = match.parent.children[prevIdx];
             const t = getObjectType(prevMatch, context);
-            const name = match.children[1].text;
-            const result = reg.exec(name);
-            return t.getMember(result[1]).type;
+            if (!t) return null;
+            const childName = match.children[1].text;
+            const r = reg.exec(childName);
+            if (!r) return null;
+            const member = t.getMember(r[1]);
+            return member ? member.type : null;
         }
         name = match.children[1].text;
     }
     else {
         name = match.text;
     }
+
     const result = reg.exec(name);
+    if (!result) return null;
 
-    if (!result)
-        return null;
-
-    if (result.length <= 2) {
-        const v = context.getVariable(result[1]);
-        return v ? v.type : null;
-    }
-    else {
+    // 修复点: 旧实现用 result.length 判断是否函数调用,
+    // 但 RegExp.exec 的 length 总是分组数+1, 永远走变量分支.
+    // 这里改为检测是否真的捕获到了括号(分组2).
+    const isCall = !!result[2];
+    if (isCall) {
         const f = context.getFunc(result[1]);
         return f ? f.type : null;
     }
+    const v = context.getVariable(result[1]);
+    return v ? v.type : null;
 }
 
 /** 表达式匹配回调 */
@@ -256,16 +261,24 @@ const teaGrammarPattern: LanguageGrammar = {
                 "name": GrammarPatternDeclare.Identifier,
             },
             onMatched: (match) => {
-                const type = match.getMatch("type")[0].text;
-                const name = match.getMatch("name")[0].text;
+                const type = match.getMatch("type")[0]?.text;
+                const names = match.getMatch("name");
+                if (!type || !names || names.length === 0) return;
                 const context = match.matchedScope.state as TeaContext;
-                const va = new TeaVar(context.getType(type), name);
-                va.pos = match.endOffset;
-                context.addVariable(va);
+                if (!context) return;
+                isInDim = true;
+                // 修复点: 旧实现只把第一个 name 入符号表
+                // 'Dim a, b, c As Integer' 中 b/c 会丢失
+                for (const n of names) {
+                    if (!n.text) continue;
+                    const va = new TeaVar(context.getType(type), n.text);
+                    va.pos = match.endOffset;
+                    context.addVariable(va);
+                }
             },
-            onCompletion: (m) => {
+            onCompletion: (_m) => {
                 GrammarMatchResult.shieldKeywordCompletion = false;
-                return { items: teaBuiltinTypesCompletion, isBreak: false }
+                return { items: teaBuiltinTypesCompletion, isBreak: false };
             }
         },
         // 表达式定义
@@ -390,23 +403,30 @@ const teaGrammarPattern: LanguageGrammar = {
             onMatched: (match) => {
                 const type = getMatchedProps(match, "type");
                 const name = getMatchedProps(match, "name");
+                if (!name) return;
 
                 const context = match.matchedScope.state as TeaContext;
-                const func = new TeaFunc(context.getType(type), name);
+                if (!context) return;
+                const func = new TeaFunc(context.getType(type || "Void"), name);
 
-                if (/^\s*Export.+/i.test(match.text)) {
-                    let tempList: TeaFunc[] = null;
-                    if (!exportFunc.has(match.document.uri))
-                        exportFunc.set(match.document.uri, tempList = []);
-                    else tempList = exportFunc.get(match.document.uri);
-                    tempList.push(func)
+                if (/^\s*Export\b/i.test(match.text)) {
+                    let tempList = exportFunc.get(match.document.uri);
+                    if (!tempList) {
+                        tempList = [];
+                        exportFunc.set(match.document.uri, tempList);
+                    }
+                    tempList.push(func);
                     func.export = true;
                 }
 
                 func.pos = match.startOffset;
                 context.global.addFunction(func);
 
+                // 修复点: 旧实现先 context.addContext(con), 再 func.setFunctionContext(con)
+                // 后者会再做一次 global.addContext, 导致 con 同时挂在两个父节点上,
+                // 也会让函数参数被注入两遍.
                 const con = new TeaContext();
+                con.global = context.global;
                 context.addContext(con);
                 func.setFunctionContext(con);
 
@@ -462,15 +482,17 @@ const teaGrammarPattern: LanguageGrammar = {
                 }
             },
             onHover: (match) => {
-                const name = match.text;
-                const context = match.matchedScope.state as TeaContext;
-                if (!context)
-                    return Promise.resolve({ contents: [""], });
+                // 修复点: 旧实现把整个 'Call funcName(...)' 文本作为函数名查询, 永远查不到.
+                // 现在只取 fname 子节点.
+                const name = getMatchedProps(match.matchedPattern, "fname");
+                const context = match.matchedScope?.state as TeaContext;
+                if (!name || !context)
+                    return Promise.resolve({ contents: [""] });
 
                 const o = context.global.getFunc(name);
-                return Promise.resolve({ contents: [`${o ? o : ""}`], });
+                return Promise.resolve({ contents: [`${o ? o.toString() : ""}`] });
             },
-            onCompletion: (m) => {
+            onCompletion: (_m) => {
                 GrammarMatchResult.shieldKeywordCompletion = true;
                 return { items: [], isBreak: false };
             }
@@ -490,24 +512,28 @@ const teaGrammarPattern: LanguageGrammar = {
             },
             onMatched: (match) => {
                 const val = getMatchedProps(match, "val");
-                if (val != null && val != "") {
-                    var tempList: string[] = null;
-                    if (!globalValue.has(match.document.uri))
-                        globalValue.set(match.document.uri, tempList = []);
-                    else tempList = globalValue.get(match.document.uri);
-                    tempList.push(val);
+                if (!val) return;
+                let tempList = globalValue.get(match.document.uri);
+                if (!tempList) {
+                    tempList = [];
+                    globalValue.set(match.document.uri, tempList);
                 }
+                // 同一文档内同名 global var 只记一次, 避免补全列表里重复
+                if (!tempList.includes(val)) tempList.push(val);
             },
-            onCompletion: (match) => {
-                let exportCompletionInfos: CompletionItem[] = [];
-                globalValue.forEach((v, k) => {
+            onCompletion: (_match) => {
+                const seen = new Set<string>();
+                const exportCompletionInfos: CompletionItem[] = [];
+                globalValue.forEach((v) => {
                     v.forEach(i => {
+                        if (seen.has(i)) return;
+                        seen.add(i);
                         exportCompletionInfos.push({
                             label: i,
                             kind: CompletionItemKind.Field,
                             detail: "GlobalVar 全局变量",
-                        })
-                    })
+                        });
+                    });
                 });
                 GrammarMatchResult.shieldKeywordCompletion = true;
                 return { items: exportCompletionInfos, isBreak: true };
@@ -523,18 +549,19 @@ const teaGrammarPattern: LanguageGrammar = {
                     patterns: [
                         "<identifier>"
                     ],
-                    ignore: /(Array|Val|GVal)/g
+                    // 修复点: 旧实现带 /g 标志的正则在反复 exec 时会保留 lastIndex,
+                    // 造成跨调用结果漂移. 这里去掉 g 标志.
+                    ignore: /^(Array|Val|GVal|Str|GStr|GV|V)$/i
                 }
             },
             onHover: (match) => {
                 const name = getMatchedProps(match.matchedPattern, "name");
-                const context = match.matchedScope.state as TeaContext;
-                if (!context) return Promise.resolve({ contents: [""], });
-
+                const context = match.matchedScope?.state as TeaContext;
+                if (!name || !context) return Promise.resolve({ contents: [""] });
                 const o = context.global.getFunc(name);
-                return Promise.resolve({ contents: [`${o ? o : ""}`], });
+                return Promise.resolve({ contents: [`${o ? o.toString() : ""}`] });
             },
-            onCompletion: (match) => {
+            onCompletion: (_match) => {
                 GrammarMatchResult.shieldKeywordCompletion = true;
                 return { items: [], isBreak: false };
             }
@@ -562,7 +589,22 @@ const teaGrammarPattern: LanguageGrammar = {
         },
         "if-structure": {
             name: "If Structure",
-            patterns: ["If <cond> Then [{block}] [ElseIf <cond> Then [{block}] ...] [Else [{block}]] End If"],
+            // 优先匹配多行形态; 多行不成功(Then 后有非空非注释内容)时再尝试单行形态.
+            // 单行形态: If <cond> Then <statement>  -- 整行包含一条语句, 无 End If.
+            // (来源: wiki TeaScript Syntax - Shortcut if statement)
+            patterns: [
+                "If <cond> Then [{block}] [ElseIf <cond> Then [{block}] ...] [Else [{block}]] End If",
+                "If <cond> Then <if-line-stmt>"
+            ],
+            dictionary: {
+                // 单行 If 的 then 部分: 同行剩余的非空非注释内容
+                // - 首字符不能是 '  (排除 "If x Then ' comment" 误识)
+                // - 不允许换行 (避免吞下下一行)
+                "if-line-stmt": {
+                    name: "If Line Statement",
+                    patterns: ["/[^'\\r\\n][^\\r\\n]*/"]
+                }
+            }
         },
         "for-loop": {
             name: "For Loop",
@@ -623,12 +665,11 @@ const teaGrammarPattern: LanguageGrammar = {
             },
             onHover: (match) => {
                 const name = getMatchedProps(match.matchedPattern, "field");
-                const context = match.matchedScope.state as TeaContext;
-                if (!context)
-                    return Promise.resolve({ contents: [""], });
+                const context = match.matchedScope?.state as TeaContext;
+                if (!name || !context) return Promise.resolve({ contents: [""] });
 
                 const o = context.getVariable(name);
-                return Promise.resolve({ contents: [`${o ? o : ""}`], });
+                return Promise.resolve({ contents: [`${o ? o.toString() : ""}`] });
             }
         }
 
@@ -671,7 +712,8 @@ const teaGrammarPattern: LanguageGrammar = {
                     patterns: ["<no-sense>"],
                     dictionary: {
                         "no-sense": {
-                            patterns: ["/[_a-zA-Z0-9]+\\r\\n/"]
+                            // 修复点: 旧实现只匹配 \r\n, 在 Unix(LF) 行尾文件下完全失效
+                            patterns: ["/[_a-zA-Z0-9]+\\r?\\n/"]
                         }
                     }
                 }
@@ -683,8 +725,13 @@ const teaGrammarPattern: LanguageGrammar = {
                     match.state = func.functionContext;
                     return;
                 }
-                match.state = new TeaContext();
-                (match.matchedScope?.state as TeaContext).addContext(match.state as TeaContext);
+                const newCtx = new TeaContext();
+                const upper = (match.matchedScope?.state as TeaContext);
+                if (upper) {
+                    newCtx.global = upper.global;
+                    upper.addContext(newCtx);
+                }
+                match.state = newCtx;
             },
             onCompletion: (match) => {
                 isInBlock = true;
@@ -726,7 +773,7 @@ const teaGrammarPattern: LanguageGrammar = {
                     patterns: ["<no-sense>"],
                     dictionary: {
                         "no-sense": {
-                            patterns: ["/[_a-zA-Z0-9]+\\r\\n/"]
+                            patterns: ["/[_a-zA-Z0-9]+\\r?\\n/"]
                         }
                     }
                 }

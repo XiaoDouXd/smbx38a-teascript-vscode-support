@@ -1,0 +1,43 @@
+<!-- title: BGO (TeaScript) -->
+<!-- pageid: 1144 -->
+<!-- revid: 10380 -->
+<!-- timestamp: 2026-04-10T01:47:39Z -->
+<!-- source: https://wohlsoft.ru/pgewiki/BGO_(TeaScript) -->
+
+BGO is a class in TeaScript.vbs that allows you to read/write values for background objects.
+
+==Using the BGO Class==
+To read the value of <code>BGO</code> use:<syntaxhighlight lang="vb">
+BGO(id).name
+
+</syntaxhighlight><code>id</code> stands for the BGO's permanent ID. To change the value of <code>BGO</code> use:<syntaxhighlight lang="vb">
+BGO(id).name = value
+</syntaxhighlight>
+
+==BGO Properties==
+
+======Physical Properties======
+{{Tea_table|1=  
+  {{Tea_row|double|id|-|The ID is used to decide and tie in its graphics, BGO flags. You can change this value to change the BGO into another}}
+  {{Tea_row|double|x|-|The x coordinate of the BGO in scene coordinates.}}
+  {{Tea_row|double|y|-|The y coordinate of the BGO in scene coordinates.}}
+  {{Tea_row|double|xsp|-|Horizontal Speed (Moves right if set to a positive number, moves left if set to a negative number)}}
+  {{Tea_row|double|ysp|-|Vertical Speed (Moves down if set to a positive number, moves up if set to a negative number)}}
+  {{Tea_row|double|hide|-|Whether the BGO is hidden or not.}}}}
+
+======Graphical Properties======
+{{Tea_table|1=  
+  {{Tea_row|double|zpos|-|The priority value of the BGO. Must be a number between 0 and 1, where 0 is foreground and 1 is background.}}
+  {{Tea_row|double|extx|-|This values chooses the alternative GFX x position starting from 0. Setting this value to -1 makes the NPC invisible. A BGO automatically has an extx if the texture width is larger than the BGO width.}}
+  {{Tea_row|double|exty|-|This values chooses the alternative GFX y position starting from 0. Setting this value to -1 makes the NPC invisible. A BGO automatically has an exty if the texture height is larger than the BGO height.}}
+  {{Tea_row|double|forecolor|-|An overlay hue added to the BGO. Setting this value to 0 makes the BGO invisible, setting it to -1 returns it to default. Use the rgba(red, green, blue, alpha) function to choose a specific hue.}}
+  {{Tea_row|double|forecolor_r|-|The red value of the hue described in 'forecolor'. Should be a value between 0 to 255. Use this value to read and get only the red component.}}
+  {{Tea_row|double|forecolor_g|-|The green value of the hue described in 'forecolor'. Should be a value between 0 to 255. Use this value to read and get only the green component.}}
+  {{Tea_row|double|forecolor_b|-|The blue value of the hue described in 'forecolor'. Should be a value between 0 to 255. Use this value to read and get only the blue component.}}
+  {{Tea_row|double|forecolor_a|-|The alpha value of the hue described in 'forecolor'. Should be a value between 0 to 255. Use this value to read and get only the alpha component.}}
+}}
+
+====== Unknown ======
+{{Tea_table|{{Tea_row|double|prx|-|Unknown}}
+  {{Tea_row|double|pry|-|Unknown}}}}
+[[Category:TeaScript.vbs]]

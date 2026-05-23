@@ -1,0 +1,52 @@
+<!-- title: Liquid (TeaScript) -->
+<!-- pageid: 1180 -->
+<!-- revid: 10432 -->
+<!-- timestamp: 2026-04-18T03:26:16Z -->
+<!-- source: https://wohlsoft.ru/pgewiki/Liquid_(TeaScript) -->
+
+[[Category:TeaScript.vbs]]
+Liquid is a class in TeaScript.vbs that allows you to read/write values of liquid boxes and zones.
+
+=Using the Liquid Class=
+To read the value of <code>Liquid</code> use:
+<syntaxhighlight lang="vb">
+Liquid(index).name
+</syntaxhighlight>
+
+To change the value of a <code>Liquid</code> use:
+<syntaxhighlight lang="vb">
+Liquid(index).name = value
+</syntaxhighlight>
+
+=Liquid Properties=
+=====Physical Properties=====
+{{Tea_table|1=  
+  {{Tea_row|double|x|-|The top left x position of the liquid in scene coordinates. In circular mode, this is the center of the liquid.}}
+  {{Tea_row|double|y|-|The top left y position of the liquid in scene coordinates. In circular mode, this is the center of the liquid.}}
+  {{Tea_row|double|width|-|The width of the liquid. In circular mode, this represents the radius.}}
+  {{Tea_row|double|height|-|The height of the liquid. In circular mode, this value is -1. }}
+  {{Tea_row|double|xsp|-|The horizontal speed of the liquid. Negative values cause leftwards movement, positive values cause rightwards movement.}}
+  {{Tea_row|double|ysp|-|The vertical speed of the liquid. Negative values cause upwards movement, positive values cause downwards movement.}}
+  {{Tea_row|double|hide|-|Whether the liquid is hidden or not.}}
+}}
+=====Behavioral Properties=====
+{{Tea_table|1=  
+  {{Tea_row|double|fdir|-|The direction of the force field.}}
+  {{Tea_row|double|fval|-|The acceleration of the force field.}}
+  {{Tea_row|double|fmax|-|The max speed of the force field.}}
+  {{Tea_row|double|wconst|-|The resistance of the force field.}}
+}}
+
+======Liquid Events======
+{{Tea_table|  {{Tea_row|string|touchevent|-|When a player enters a liquid boundary, it will call the event/script defined. The event/script is called every frame the player is inside the liquid boundary.}}
+}}
+
+====== Unknown ======
+{{Tea_table|{{Tea_row|double|prx|-|Unknown}}
+  {{Tea_row|double|pry|-|Unknown}}}}
+
+<br />
+
+==Oddities and Quirks==
+Below is a list of certain quirks players have that does not conform to standard behavior or simply other miscellaneous behavior.
+* Liquids can either be rectangular or circular. This is entirely decided by setting height to -1 (for circular mode) or a positive value (for rectangular mode). You can set this value to -1 to force the liquid into circular mode or vice-versa. In circular mode, x and y instead define the center of the liquid and width defines the radius.

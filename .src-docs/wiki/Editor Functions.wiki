@@ -1,0 +1,79 @@
+<!-- title: Editor Functions -->
+<!-- pageid: 1507 -->
+<!-- revid: 8353 -->
+<!-- timestamp: 2022-12-12T05:37:35Z -->
+<!-- source: https://wohlsoft.ru/pgewiki/Editor_Functions -->
+
+Functions that work only in edit mode are used through Script Editor (Editor).
+
+==ObjectCreate==
+Returns the PermID of Object. 
+{| class="wikitable"
+|+
+!Parameters
+!Description
+|-
+| rowspan="3" |Type
+| rowspan="3" |The Type of Object
+{| class="wikitable"
+|+
+!Type
+!Name
+|-
+|1
+|Blocks
+|-
+|2
+|Backgrounds
+|-
+|3
+|NPCs
+|-
+|4
+|Liquids
+|}
+|-
+|-
+|}
+ dim PermID as integer = objectcreate(Type)
+
+==ObjectRemove==
+Remove the object get called.
+
+{| class="wikitable"
+|+
+!Parameters
+!Description
+|-
+|Type
+|The Type of Object
+{| class="wikitable"
+!ID
+!Name
+|-
+|1
+|Blocks
+|-
+|2
+|Backgrounds
+|-
+|3
+|NPCs
+|-
+|4
+|Warps
+|-
+|5
+|Liquids
+|}
+|-
+| rowspan="3" |PermID
+| rowspan="3" |PermID of Object
+|-
+|
+|-
+|}
+ call objectremove(Type, PermID)
+'''<big>Additional Information</big>'''
+*All objects and (most of) properties can be manipulated within the Script Editor (Editor), through their PermID.
+[[Category:TeaScript.vbs]]

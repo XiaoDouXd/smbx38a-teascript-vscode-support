@@ -1,0 +1,63 @@
+<!-- title: Declarations -->
+<!-- pageid: 1369 -->
+<!-- revid: 6454 -->
+<!-- timestamp: 2020-09-01T20:29:05Z -->
+<!-- source: https://wohlsoft.ru/pgewiki/Declarations -->
+
+Before you get into this tutorial, you should first have at least a basic understanding of the existence of Control Declarations. If you don’t, click [[TeaScript_Syntax#Control_Flow|this conveniently placed link]], which tells you all you need to know.
+
+If you've read past that knowledge checkpoint, I will assume that you do, at least, somewhat understand how Control Declarations work, even if it is on a very basic level. Given that liberty, I will introduce you to
+
+==Declarations==
+A <code>declaration</code> is a line of code that, when ran, makes itself true. An example of a declaration would be:<syntaxhighlight lang="vb" start="1">
+.x += 64
+</syntaxhighlight>This <code>declaration</code> would, upon being ran, add 64 to the specified object's <code>x-axis</code> value. <code>Declarations</code> are the fundamental working grounds of all languages, and thus are very simple in nature.
+
+===Examples===
+<syntaxhighlight lang="vb" start="1">
+.y = 64
+</syntaxhighlight><syntaxhighlight lang="vb" start="1">
+char(1).id = 1
+</syntaxhighlight><syntaxhighlight lang="vb" start="1">
+char(1).ysp = -5
+</syntaxhighlight>
+
+#Makes the specified object's <code>y-axis</code> value equal to 64.
+#Makes player one Luigi.
+#Makes player one's <code>y-axis</code> speed equal to negative five (so, moving upwards).
+
+Now that you know how to <code>declare</code>, I bring you one of the very building blocks of all coding languages;
+
+==If Statements==
+The <code>if</code> statement is a very common statement; one that you can find in a vast majority of coding languages, and Teascript is no different. <code>If</code> statements are formatted as such:<syntaxhighlight lang="vb" start="1">
+if 'condition
+   'declaration
+end if
+</syntaxhighlight>This is a basic if statement, with one <code>condition</code> and one <code>declaration</code>. A <code>condition</code> is what's being checked, and a <code>declaration</code> is what will be done if the condition is met. Using this alone, you can make scripts that control players, npcs, and more.<syntaxhighlight lang="vb" start="1">
+if sysval(coincount) > 50
+   sysval(coincount) -= 50
+end if
+</syntaxhighlight>Here's an example of a functioning <code>if</code> statement. Line 1, <code>if sysval(coincount) > 50</code> first tells Teascript that you are using an <code>if</code> statement, via the use of <code>if</code>, then ''asks'' if the player's coin count is greater than 50. Next, if the <code>condition</code> is met, the language goes on to make the <code>declaration</code> true (in this case, it subtracts fifty coins from poor Mario). Whenever writing an <code>if</code> statement, you must ''first'' write the <code>condition</code> next to the <code>if</code>, and not the <code>statement</code>.
+
+===Examples===
+<syntaxhighlight lang="vb" start="1">
+if gv(wind)=1
+   char(1).x -= 1
+end if
+</syntaxhighlight><syntaxhighlight lang="vb" start="1">
+if .health = 1
+   char(1).xsp = char(1).xsp*-1
+   .health = 2
+end if
+</syntaxhighlight><syntaxhighlight lang="vb" start="1">
+if .ivala = 1
+   .ivalb += 1
+end if
+</syntaxhighlight>
+
+#Checks if the global variable <code>wind</code> is 1, and if so, makes player one move backwards a pixel.
+#Checks if the specified object's <code>health</code> is one, and if so, forces player one to move backwards and sets <code>health</code> to two.
+#Checks if <code>ivala</code> is 1, and if so, adds one to <code>ivalb</code>.
+
+This is, on a basic level, how most scripters do things in Teascript. And given how you've just learned how to do it; welcome to the world of Teascripting.
+[[Category:TeaScript.vbs]]

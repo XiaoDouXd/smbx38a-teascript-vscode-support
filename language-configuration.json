@@ -1,57 +1,29 @@
 {
     "comments": {
-        // symbol used for single line comment. Remove this entry if your language does not support line comments
         "lineComment": "'"
     },
-    // symbols used as brackets
     "brackets": [
-        [
-            "[",
-            "]"
-        ],
-        [
-            "(",
-            ")"
-        ]
+        ["[", "]"],
+        ["(", ")"]
     ],
-    // symbols that are auto closed when typing
     "autoClosingPairs": [
-        [
-            "[",
-            "]"
-        ],
-        [
-            "(",
-            ")"
-        ],
-        [
-            "\"",
-            "\""
-        ]
+        ["[", "]"],
+        ["(", ")"],
+        ["\"", "\""]
     ],
-    // symbols that can be used to surround a selection
     "surroundingPairs": [
-        [
-            "[",
-            "]"
-        ],
-        [
-            "(",
-            ")"
-        ],
-        [
-            "\"",
-            "\""
-        ]
+        ["[", "]"],
+        ["(", ")"],
+        ["\"", "\""]
     ],
     "folding": {
         "markers": {
-            "start": "\\b((((E|e)xport\\s+)?((S|s)cript\\s+)([_a-zA-Z][_a-zA-Z0-9]*)(\\([\\s\\S]*\\))) | ((I|i)f\\s+[.]*) | ((w|W)ith\\s+[.]*) | ((D|d)o\\s+[.]*) | ((F|f)or\\s+[.]*) )\\b",
-            "end": "\\b(((E|e)nd\\s+(S|s)cript) | ((e|E)nd\\s+(I|i)f) | ((E|e)nd\\s+(W|w)ith) | ((L|l)oop\\s+[.]*) | ((N|n)ext) )\\b"
+            "start": "^\\s*(?:(?:[Ee]xport\\s+)?[Ss]cript\\b|[Ii]f\\b.*\\b[Tt]hen\\s*$|[Ww]ith\\b|[Dd]o\\b|[Ff]or\\b|[Ss]elect\\s+[Cc]ase\\b)",
+            "end": "^\\s*(?:[Ee]nd\\s+[Ss]cript\\b|[Ee]nd\\s+[Ii]f\\b|[Ee]nd\\s+[Ww]ith\\b|[Ee]nd\\s+[Ss]elect\\b|[Ll]oop\\b|[Nn]ext\\b)"
         }
     },
     "indentationRules": {
-        "increaseIndentPattern": "((((E|e)xport\\s+)?((S|s)cript\\s+)([_a-zA-Z][_a-zA-Z0-9]*)(\\([\\s\\S]*\\)))|((I|i)f\\s+.*)|((E|e)lse((I|i)f)?\\s+.*)|((w|W)ith\\s+[.]*)|((D|d)o\\s+[.]*)|((F|f)or\\s+[.]*))",
-        "decreaseIndentPattern": "(((E|e)nd\\s+(S|s)cript)|((E|e)lse((I|i)f)?\\s+.*)|((e|E)nd\\s+(I|i)f)|((E|e)nd\\s+(W|w)ith)|((L|l)oop\\s+[.]*)|((N|n)ext))\\b"
+        "increaseIndentPattern": "^\\s*(?:(?:[Ee]xport\\s+)?[Ss]cript\\b|[Ii]f\\b.*\\b[Tt]hen\\s*$|[Ee]lse(?:[Ii]f)?\\b|[Ww]ith\\b|[Dd]o\\b|[Ff]or\\b|[Ss]elect\\s+[Cc]ase\\b|[Cc]ase\\b)",
+        "decreaseIndentPattern": "^\\s*(?:[Ee]nd\\s+[Ss]cript\\b|[Ee]lse(?:[Ii]f)?\\b|[Ee]nd\\s+[Ii]f\\b|[Ee]nd\\s+[Ww]ith\\b|[Ee]nd\\s+[Ss]elect\\b|[Ll]oop\\b|[Nn]ext\\b|[Cc]ase\\b)"
     }
 }

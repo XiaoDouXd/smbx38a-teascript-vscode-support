@@ -3,46 +3,38 @@
 	"name": "SMBX Tea",
 	"scopeName": "source.smt",
 	"patterns": [
-		{
-			"include": "#comment"
-		},
-		{
-			"include": "#declare"
-		},
-		{
-			"include": "#keywords"
-		},
-		{
-			"include": "#expression"
-		}
+		{ "include": "#comment" },
+		{ "include": "#declare" },
+		{ "include": "#keywords" },
+		{ "include": "#expression" }
 	],
 	"repository": {
 		"keywords": {
 			"patterns": [
+				{ "include": "#buildin_type" },
+				{ "include": "#support" },
 				{
-					"include": "#support"
-				},
-				{
-					"name": "keyword.control",
-					"match": "\\b((((A|a)s)|((C|c)all)|((C|c)ase)|((D|d)im)|((E|e)lse(I|i)f)|((E|e)lse)|((E|e)nd)|((E|e)xport)|((F|f)or)|((G|g)o(T|t)o)|((G|g)o(S|s)ub)|((I|i)f)|((n|N)ext)|((R|r)eturn)|((S|s)cript)|((S|s)elect)|((S|s)tep)|((T|t)hen)|((T|t)o)|((W|w)hile)|((W|w)ith)|((D|d)o)|((L|l)oop))|((e|E)xit)|((G|g)o(S|s)ub)|((C|c)ontinue))\\b"
+					"name": "keyword.control.smbxtea",
+					"match": "(?i)\\b(as|call|case|continue|dim|do|else|elseif|end|exit|export|for|gosub|goto|if|loop|next|return|script|select|step|then|to|until|while|with|redim)\\b"
 				}
 			]
 		},
 		"support": {
 			"patterns": [
 				{
-					"name": "keyword.support.buildin",
-					"match": "\\b(((A|a)rray)|((G|g)Val)|((R|r)eDim)|((S|s)tr)|(v|V)|((V|v)al))\\b"
+					"comment": "内建函数/全局变量访问器: Array(...), Val(...), GVal(...), Str(...), GStr(...), V(...), GV(...)",
+					"name": "support.function.smbxtea",
+					"match": "(?i)\\b(?:Array|GVal|Val|Str|GStr|GV|V)(?=\\s*\\()"
 				}
 			]
 		},
 		"strings": {
-			"name": "string.quoted.double",
+			"name": "string.quoted.double.smbxtea",
 			"begin": "\"",
-			"end": "\"",
+			"end": "\"|$",
 			"patterns": [
 				{
-					"name": "constant.character.escape",
+					"name": "constant.character.escape.smbxtea",
 					"match": "\\\\."
 				}
 			]
@@ -50,16 +42,15 @@
 		"numeric": {
 			"patterns": [
 				{
-					"name": "constant.numeric",
-					"match": "\\b([0-9]+\\.?[0-9]*)\\b"
+					"name": "constant.numeric.smbxtea",
+					"match": "\\b[0-9]+(?:\\.[0-9]+)?\\b"
 				}
 			]
 		},
 		"comment": {
-			"name": "comment.line",
 			"patterns": [
 				{
-					"name": "comment.line",
+					"name": "comment.line.apostrophe.smbxtea",
 					"match": "'.*$"
 				}
 			]
@@ -67,18 +58,16 @@
 		"buildin_type": {
 			"patterns": [
 				{
-					"name": "storage.type",
-					"match": "\\b(((I|i)nteger)|((D|d)ouble)|((L|l)ong)|((B|b)yte)|((S|s)tring)|((B|b)oolean))\\b"
+					"name": "storage.type.smbxtea",
+					"match": "(?i)\\b(integer|double|long|byte|string|boolean|single|void)\\b"
 				}
 			]
 		},
 		"type": {
 			"patterns": [
+				{ "include": "#buildin_type" },
 				{
-					"include": "#buildin_type"
-				},
-				{
-					"name": "entity.name.type",
+					"name": "entity.name.type.smbxtea",
 					"match": "\\b[_a-zA-Z][_a-zA-Z0-9]*\\b"
 				}
 			]
@@ -86,7 +75,7 @@
 		"identifier": {
 			"patterns": [
 				{
-					"name": "variable.name",
+					"name": "variable.other.smbxtea",
 					"match": "\\b[_a-zA-Z][_a-zA-Z0-9]*\\b"
 				}
 			]
@@ -94,256 +83,129 @@
 		"operators": {
 			"patterns": [
 				{
-					"name": "keyword.operator",
-					"match": "([+\\-\\*/<=>\\?\\!.]|(\\b((M|m)od)\\b)|(\\b((A|a)nd)\\b)|\\b((O|o)r)\\b|\\b((N|n)ot)\\b|\\b((X|x)or)\\b|\\b((E|e)qv)\\b|\\b((I|i)mp)\\b)"
+					"name": "keyword.operator.word.smbxtea",
+					"match": "(?i)\\b(mod|and|or|not|xor|eqv|imp|like)\\b"
+				},
+				{
+					"name": "keyword.operator.smbxtea",
+					"match": "(<<|>>|<>|<=|>=|==|=|<|>|\\+|-|\\*|/|\\\\|\\^|&|\\?|!|~)"
+				},
+				{
+					"name": "punctuation.accessor.smbxtea",
+					"match": "\\."
 				}
 			]
 		},
 		"expression_constant": {
 			"patterns": [
-				{
-					"include": "#numeric"
-				},
-				{
-					"include": "#strings"
-				},
-				{
-					"include": "#operators"
-				}
+				{ "include": "#numeric" },
+				{ "include": "#strings" },
+				{ "include": "#operators" }
 			]
 		},
 		"expression": {
 			"patterns": [
-				{
-					"include": "#numeric"
-				},
-				{
-					"include": "#strings"
-				},
-				{
-					"include": "#call_function"
-				},
-				{
-					"include": "#operators"
-				},
-				{
-					"include": "#identifier"
-				}
+				{ "include": "#numeric" },
+				{ "include": "#strings" },
+				{ "include": "#call_function" },
+				{ "include": "#field" },
+				{ "include": "#operators" },
+				{ "include": "#identifier" }
 			]
 		},
 		"field": {
 			"patterns": [
 				{
-					"name": "variable.name",
-					"include": "[.]*\\.[_a-zA-Z][_a-zA-Z0-9]*"
+					"comment": "对象成员: .x .id 等",
+					"name": "meta.field.access.smbxtea",
+					"match": "(\\.)([_a-zA-Z][_a-zA-Z0-9]*)",
+					"captures": {
+						"1": { "name": "punctuation.accessor.smbxtea" },
+						"2": { "name": "variable.other.property.smbxtea" }
+					}
 				}
 			]
 		},
 		"declare": {
 			"patterns": [
-				{
-					"include": "#declare_variable"
-				},
-				{
-					"include": "#declare_function"
-				}
+				{ "include": "#declare_function" },
+				{ "include": "#declare_variable" }
 			]
 		},
 		"declare_variable": {
-			"name": "meta.var.declare",
-			"match": "(\\b(?:(?:D|d)im)\\s+)([_a-zA-Z][_a-zA-Z0-9]*)(\\s+(?:(?:A|a)s)\\s+)([_a-zA-Z][_a-zA-Z0-9]*\\b)(.*$)",
+			"name": "meta.var.declare.smbxtea",
+			"match": "(?i)(\\bdim\\s+)([_a-zA-Z][_a-zA-Z0-9]*(?:\\s*,\\s*[_a-zA-Z][_a-zA-Z0-9]*)*)(\\s+as\\s+)([_a-zA-Z][_a-zA-Z0-9]*)(.*)$",
 			"captures": {
-				"1": {
-					"name": "keyword.control.define"
-				},
-				"2": {
-					"patterns": [
-						{
-							"include": "#identifier"
-						}
-					]
-				},
-				"3": {
-					"name": "keyword.control.define.type"
-				},
-				"4": {
-					"patterns": [
-						{
-							"include": "#type"
-						}
-					]
-				},
+				"1": { "name": "keyword.control.declare.smbxtea" },
+				"2": { "patterns": [{ "include": "#identifier" }] },
+				"3": { "name": "keyword.control.declare.as.smbxtea" },
+				"4": { "patterns": [{ "include": "#type" }] },
 				"5": {
 					"patterns": [
-						{
-							"include": "#expression"
-						},
-						{
-							"include": "#comment"
-						}
+						{ "include": "#comment" },
+						{ "include": "#expression" }
 					]
 				}
 			}
 		},
 		"declare_function": {
-			"name": "meta.function.block",
-			"begin": "(\\b(?:(?:(?:E|e)xport)\\s+)?(?:\\b(?:(?:S|s)cript)\\s+))([_a-zA-Z][_a-zA-Z0-9]*)(\\([\\s\\S]*\\))",
-			"end": "(\\b(?:(?:E|e)nd)\\s+(?:(?:S|s)cript)\\b)",
+			"name": "meta.function.declare.smbxtea",
+			"begin": "(?i)(?:(\\bexport\\s+)?)(\\bscript\\s+)([_a-zA-Z][_a-zA-Z0-9]*)(\\()",
+			"end": "(?i)(\\bend\\s+script\\b)",
 			"beginCaptures": {
-				"0": {
-					"name": "declare.function.begin"
-				},
-				"1": {
-					"name": "keyword.control.function"
-				},
-				"2": {
-					"name": "entity.name.function",
-					"patterns": [
-						{
-							"include": "#identifier"
-						}
-					]
-				},
-				"3": {
-					"patterns": [
-						{
-							"include": "#declare_param"
-						}
-					]
-				}
+				"1": { "name": "keyword.control.export.smbxtea" },
+				"2": { "name": "keyword.control.script.smbxtea" },
+				"3": { "name": "entity.name.function.smbxtea" },
+				"4": { "name": "punctuation.section.parens.begin.smbxtea" }
 			},
 			"endCaptures": {
-				"0": {
-					"name": "declare.function.end"
-				},
-				"1": {
-					"name": "keyword.control.function"
-				}
+				"1": { "name": "keyword.control.script.smbxtea" }
 			},
 			"patterns": [
+				{ "include": "#declare_params_return" },
+				{ "include": "#declare_params_variable" },
 				{
-					"include": "#block"
-				}
-			]
-		},
-		"declare_param": {
-			"patterns": [
-				{
-					"name": "meta.function.parameters",
-					"begin": "\\(",
-					"end": "\\)",
-					"patterns": [
-						{
-							"include": "#declare_params_return"
-						},
-						{
-							"include": "#declare_params_variable"
-						}
-					]
-				}
+					"name": "punctuation.section.parens.end.smbxtea",
+					"match": "\\)"
+				},
+				{ "include": "#block" }
 			]
 		},
 		"declare_params_variable": {
-			"name": "meta.var.declare",
-			"begin": "([_a-zA-Z][_a-zA-Z0-9]*)(\\s+(?:A|a)s\\s+)([_a-zA-Z][_a-zA-Z0-9]*)([^,]*)",
-			"end": "\\s*(\\,)",
-			"beginCaptures": {
-				"1": {
-					"patterns": [
-						{
-							"include": "#identifier"
-						}
-					]
-				},
-				"2": {
-					"name": "keyword.control.define.type"
-				},
-				"3": {
-					"patterns": [
-						{
-							"include": "#type"
-						}
-					]
-				},
-				"4": {
-					"name": "default",
-					"patterns": [
-						{
-							"include": "#expression_constant"
-						}
-					]
-				}
+			"name": "meta.parameter.smbxtea",
+			"match": "(?i)([_a-zA-Z][_a-zA-Z0-9]*)(\\s+as\\s+)([_a-zA-Z][_a-zA-Z0-9]*)",
+			"captures": {
+				"1": { "name": "variable.parameter.smbxtea" },
+				"2": { "name": "keyword.control.declare.as.smbxtea" },
+				"3": { "patterns": [{ "include": "#type" }] }
 			}
 		},
 		"declare_params_return": {
-			"name": "meta.return",
-			"begin": "\\b((?:R|r)eturn)\\s+([_a-zA-Z][_a-zA-Z0-9]*)",
-			"end": "\\)",
-			"beginCaptures": {
-				"1": {
-					"name": "keyword.control.function"
-				},
-				"2": {
-					"patterns": [
-						{
-							"include": "#type"
-						}
-					]
-				}
+			"name": "meta.return.smbxtea",
+			"match": "(?i)(\\breturn\\b)\\s+([_a-zA-Z][_a-zA-Z0-9]*)",
+			"captures": {
+				"1": { "name": "keyword.control.return.smbxtea" },
+				"2": { "patterns": [{ "include": "#type" }] }
 			}
 		},
 		"call_function": {
-			"name": "meta.function.call.params",
+			"name": "meta.function.call.smbxtea",
 			"begin": "([_a-zA-Z][_a-zA-Z0-9]*)\\(",
 			"end": "\\)",
 			"beginCaptures": {
-				"0": {
-					"name": "function.call.start"
-				},
-				"1": {
-					"name": "entity.name.function.call"
-				}
-			},
-			"endCaptures": {
-				"0": {
-					"name": "function.call.end"
-				}
+				"1": { "name": "entity.name.function.call.smbxtea" }
 			},
 			"patterns": [
-				{
-					"patterns": [
-						{
-							"include": "#call_param"
-						}
-					]
-				}
-			]
-		},
-		"call_param": {
-			"name": "meta.function.call.param",
-			"begin": "\\s*",
-			"end": "(?![^\\)])|,",
-			"patterns": [
-				{
-					"include": "#expression"
-				}
+				{ "include": "#expression" }
 			]
 		},
 		"block": {
-			"name": "meta.block",
+			"name": "meta.block.smbxtea",
 			"patterns": [
-				{
-					"include": "#comment"
-				},
-				{
-					"include": "#declare_variable"
-				},
-				{
-					"include": "#keywords"
-				},
-				{
-					"include": "#expression"
-				}
+				{ "include": "#comment" },
+				{ "include": "#declare_variable" },
+				{ "include": "#keywords" },
+				{ "include": "#expression" }
 			]
 		}
 	}

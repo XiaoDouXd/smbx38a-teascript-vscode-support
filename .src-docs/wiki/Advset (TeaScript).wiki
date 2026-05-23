@@ -1,0 +1,122 @@
+<!-- title: Advset (TeaScript) -->
+<!-- pageid: 1447 -->
+<!-- revid: 10440 -->
+<!-- timestamp: 2026-04-20T02:21:25Z -->
+<!-- source: https://wohlsoft.ru/pgewiki/Advset_(TeaScript) -->
+
+[[Category:TeaScript.vbs]]
+[[Category:Working in Progress]]
+Here will be a full list of the advset values. Coming soon!
+
+<br />
+
+====Piranha Plant (93)====
+<syntaxhighlight lang="vb">
+.advset = STATIONARY + ALWAYS_EMERGE
+</syntaxhighlight>Note that the 'stationary' behavior overrides the 'always emerge' behavior, so it's pointless to activate both simultaneously.
+{| class="wikitablealt"
+!Name
+!Description
+!Value
+|-
+|Stationary
+|The piranha plant is always emerged.
+|<code>536870912</code>
+|-
+|Always Emerge
+|The piranha plant will emerge from its pipe, even if the player is above it.
+|<code>1073741824</code>
+|}
+
+
+====Flagpole (346)====
+<syntaxhighlight lang="vb">
+.advset = IS_SECRET_EXIT
+</syntaxhighlight>Note that the 'stationary' behavior overrides the 'always emerge' behavior, so it's pointless to activate both simultaneously.
+{| class="wikitablealt"
+!Name
+!Description
+!Value
+|-
+|Is Secret Exit?
+|The flag will be a secret exit instead of the regular exit.
+|<code>1</code>
+|}
+
+== Advanced ==
+
+
+
+====Snifit Bullet (133)====
+<syntaxhighlight lang="vb">.advset = SNIFIT_BULLET_SPAWNED</syntaxhighlight>Note that the 'stationary' behavior overrides the 'always emerge' behavior, so it's pointless to activate both simultaneously.
+{| class="wikitablealt"
+!Name
+!Description
+!Value
+|-
+|Snifit Bullet
+|Bullet spawned by snifit (NPC 30, 31, 32)
+|<code>1</code>
+|}
+
+
+====Birdo's Egg (40)====
+<syntaxhighlight lang="vb">.advset = BIRDO_EGG</syntaxhighlight>Note that the 'stationary' behavior overrides the 'always emerge' behavior, so it's pointless to activate both simultaneously.
+{| class="wikitablealt"
+!Name
+!Description
+!Value
+|-
+|Birdo's Egg
+|Spawned by Birdo (NPC 39) 
+|<code>1</code>
+|}
+
+
+====SMB3 Fireball (246)====
+<syntaxhighlight lang="vb">.advset = VENUS_FIRE_TRAP_FIREBALL</syntaxhighlight>Note that the 'stationary' behavior overrides the 'always emerge' behavior, so it's pointless to activate both simultaneously.
+{| class="wikitablealt"
+!Name
+!Description
+!Value
+|-
+|Fireball
+|Spawned by Venus Fire Trap and Angry Sun (NPC 245, 325, 329, 353)
+|<code>2</code>
+|-
+|Fireball
+|Spawned by Piranha Plants and Jumping Piranha Plants (NPC 51, 52, 270, 294)
+|<code>9</code>
+|-
+|Fireball
+|Spawned by Fire Bro. (NPC 296)
+|<code>10</code>
+|-
+|Fireball 
+|Attached to Flame Chomp (NPC 302)
+|<code>20</code>
+|}
+
+
+====Iceball (349)====
+<syntaxhighlight lang="vb">.advset = ICEBALL</syntaxhighlight>Note that the 'stationary' behavior overrides the 'always emerge' behavior, so it's pointless to activate both simultaneously.
+{| class="wikitablealt"
+!Name
+!Description
+!Value
+|-
+|Iceball
+|Spawned by Venus Fire Trap and Angry Sun (NPC 245, 325, 329, 353)
+|<code>2</code>
+|-
+|Iceball
+|Spawned by Piranha Plants and Jumping Piranha Plants (NPC 51, 52, 270, 294)
+|<code>9</code>
+|-
+|Iceball
+|Spawned by Fire Bro. (NPC 296)
+|<code>10</code>
+|}
+
+
+<br />

@@ -1,0 +1,273 @@
+<!-- title: BSet (TeaScript) -->
+<!-- pageid: 1381 -->
+<!-- revid: 10448 -->
+<!-- timestamp: 2026-05-03T16:33:31Z -->
+<!-- source: https://wohlsoft.ru/pgewiki/BSet_(TeaScript) -->
+
+{{stub}}
+
+{{Warning|''This page can still be updated if new things are discovered related to this function.''}}
+'''BSet''' is a function in TeaScript that allows for flags of object classes to be modified. At the moment, only a few flags of the NPC class can be altered.
+
+'''Syntax:'''<syntaxhighlight lang="vb">
+call bset(type, ID, FLAG_ID, Param1, Param2, Param3)
+</syntaxhighlight>
+{| class="wikitable"
+|+Parameters
+!Parameter
+!Description
+|-
+|Type
+|The object class
+|-
+|ID
+|The ID of the object in the class
+|-
+|FlagID
+|The flag of the object to be altered
+|-
+|Param1
+|The first parameter of FlagID
+|-
+|Param2
+|The second parameter of FlagID
+|-
+|Param3
+|The third parameter of FlagID
+|}
+{| class="wikitable"
+|+"Type" Parameter
+!ID
+!Description
+|-
+|0
+|Unknown
+|-
+|1
+|Unknown
+|-
+|2
+|NPC Property Settings (General)
+|-
+|138
+|Block Collision Detection [Player/NPC]
+|}
+
+== "Flag ID" Parameters ==
+
+====== '''<big>Type = 2 | NPC Property Settings (General)</big>''' ======
+{| class="wikitable"
+!FlagID
+!FlagID Desc.
+!Description
+!Param1
+!Param2
+!Param3
+|-
+|1
+|Blend Mode
+|Blend Mode of the NPC
+|
+*1 - Black
+*3 - Reddish
+*4 - Negative Colors
+*9 - Blue Cyan
+*10 - Orange/Red
+*13 - Invisible
+*66050 - Additive
+*66053 - Additive + Alpha
+*197122 - Subtractive
+*197125 - Subtractive + Alpha
+|0
+|0
+|-
+|2
+|Brightness
+|Radius(pixels) of it's illuminating range.
+|NPC Light Size.
+|0
+|0
+|-
+|3
+|Health
+|Default Health Point of this NPC {{warning|No longer works in 1.4.5.}}
+|NPC Health Amount.
+|0
+|0
+|-
+|4
+|FireBallDmg
+|The damage it will take when it was hit by fireball.
+|Amount of damage you will receive from the fireball.
+|0
+|0
+|-
+|5
+|JumpDmg
+|The damage it will take when it was hit by player's jump.
+|Amount of damage you will receive from the Jump.
+|0
+|0
+|-
+|6
+|HammerDmg
+|The damage it will take when it was hit by Hammer.
+|Amount of damage you will receive from the Hammer.
+|0
+|0
+|-
+|7
+|LavaDmg
+|The damage it will take when it was fall into Lava.
+|Amount of damage you will receive from the Lava.
+|0
+|0
+|- 
+|8
+|ShellDmg
+|The damage it will take when it was hit by Shell.
+|Amount of damage you will receive from the Shell.
+|0
+|0
+|-
+|9
+|ExplosionDmg
+|The damage it will take when it was bombed.
+|Amount of damage you will receive from the Explosion.
+|0
+|0
+|-
+|10
+|BlockHitDmg
+|The damage it will take when it was hit by Block.
+|Amount of damage you will receive from the Block.
+|0
+|0
+|-
+|11
+|TailSpinDmg
+|The damage it will take when it was hit by player's tail spin.
+|Amount of damage you will receive from the Tail Tanooki/Leaf.
+|0
+|0
+|-
+|12
+|Score
+|How many points the NPC should give you upon its death/collection.
+|
+*0 - No Score
+*1 - 10 points
+*2 - 100 points
+*3 - 200 points
+*4 - 400 points
+*5 - 800 points
+*6 - 1000 points
+*7 - 2000 points
+*8 - 4000 points
+*9 - 8000 points
+*10 - 1-up
+*11 - 2-up
+*12 - 3-up
+*13 - 5-up
+|0
+|0
+|-
+|14
+|Frozen Timer
+|How many frames can it be frozen.
+|Determine NPC freeze time:
+
+*-1 - It cannot be frozen.
+*0 - Infinitely frozen.
+*(> 0) - Greater than zero, determines the NPC freeze time.
+|0
+|0
+|-
+|16
+|NoBlockCollision
+|Whether this NPC can pass through blocks.
+|Determines whether the NPC will collide with blocks:
+
+*0 - Yes
+*1 - No
+|0
+|0
+|-
+|1438
+|NPC ID 339 Properties for other NPCs
+|Makes an NPC of your choice have the same properties as NPC ID 339. Use .advset to adjust the stretched length of the NPC. Use .ivala to adjust the rotation angle of the NPC. Only works when Parallel Execution is disabled.
+|38
+|0
+|0
+|-
+|5438
+|CollisionType
+|Determines the collision type of the NPC. (Disables collision with blocks if used, Enable npc sprite and hitbox rotation using .ivala with a 360 degrees system (45000 = 45°))
+|NPC type of collision:
+
+*1 - Full Square or Rectangular Collision
+*2 - Only on the Top of NPC
+*3 - Round
+*4 or more - None
+|0
+|0
+|}
+
+====== <big>Type = 138 | Block Collision Detection [Player/NPC]</big> ======
+{| class="wikitable"
+|+
+!FlagID
+!FlagID Desc.
+!Param 1
+!Param 2
+!Param 3
+|-
+|19
+|Slop Plataform (Upper Left)
+|0
+|0
+|0
+|-
+|20
+|Slop Plataform (Upper Right)
+|0
+|0
+|0
+|-
+|21
+|Slop Plataform (Bottom Left)
+|0
+|0
+|0
+|-
+|22
+|Slop Plataform (Bottom Right)
+|0
+|0
+|0
+|-
+|23
+|Plataform (Down)
+|1
+|0
+|0
+|-
+|24
+|Plataform (Left)
+|1
+|0
+|0
+|-
+|25
+|Plataform (Right)
+|1
+|0
+|0
+|}
+
+== Oddities and Quirks ==
+Below is a list of certain quirks players have that does not conform to standard behavior or simply other miscellaneous behavior.
+
+* BSet values do not apply to NPC ID 357.
+
+[[Category:TeaScript.vbs]]

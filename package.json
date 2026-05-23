@@ -2,7 +2,7 @@
     "name": "teascript-for-smbx38a",
     "displayName": "Teascript For SMBX38A",
     "description": "Teascript of SMBX38A coding support.",
-    "version": "0.0.8",
+    "version": "0.0.9",
     "engines": {
         "vscode": "^1.68.0"
     },
@@ -38,7 +38,7 @@
         ],
         "snippets": [
             {
-                "language": "shaderlab",
+                "language": "smbxtea",
                 "path": "./snippets/smbxtea.json"
             }
         ]
@@ -47,6 +47,9 @@
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -b",
         "watch": "tsc -b -w",
+        "test": "tsc -b && node test/run-tests.js",
+        "package": "node scripts/package-vsix.js",
+        "package:fast": "node scripts/package-vsix.js --skip-tests",
         "postinstall": "cd client && npm install && cd ../server && npm install && cd .."
     },
     "devDependencies": {

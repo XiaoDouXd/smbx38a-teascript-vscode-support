@@ -1,0 +1,50 @@
+<!-- title: BGP (TeaScript) -->
+<!-- pageid: 1145 -->
+<!-- revid: 9035 -->
+<!-- timestamp: 2024-02-23T20:17:45Z -->
+<!-- source: https://wohlsoft.ru/pgewiki/BGP_(TeaScript) -->
+
+[[Category:TeaScript.vbs]]
+BGP is a class in TeaScript.vbs that allows you to read/write values of backgrounds (background2).
+
+<br />
+
+==Using the BGP Class==
+To read the value of <code>BGP</code> use:<syntaxhighlight lang="vb">
+BGP(index).name
+</syntaxhighlight>
+
+To change the value of <code>BGP</code> use:
+<syntaxhighlight lang="vb">
+BGP(index).name = value
+</syntaxhighlight><br />
+
+==Array-like Strings==
+For the BGP class, "array-like" strings are used. The arrays look like this:
+<syntaxhighlight lang="vb">
+'BGP(2) is the SMB3 Cloud background
+BGP(2).splitcount = 3 'The background is split into three sections
+BGP(2).splitter = "300, 400" 'The three sections are located in: (0-300), (300-400), and (400-700)
+BGP(2).movesp = "2, 0, -2"  'Now that the background is split, the three values are set like this
+</syntaxhighlight>
+
+==BGP Properties==
+
+======Splitting Properties======
+{{Tea_table| 
+  {{Tea_row|double|splitcount|-|Decides into how many subsections the background image is split into. Changing this value changes how many values are entered into all other BGP properties.}}
+  {{Tea_row|string|splitter|-|An "array-like" string that stands for the y position in which the background is split into. The array should only contain where the split happens and should have one less value than <code>splitcount</code>. Note, the y position is for the image file with 0 starting from the top. }}
+}}
+
+
+======Physical Properties======
+{{Tea_table| 
+  {{Tea_row|string|movesp|-|An "array-like" string that controls the horizontal speed of the subsection. }}
+  {{Tea_row|string|offset|-|An "array-like" string that stands for a horizontal shift of the subsection. }}
+  {{Tea_row|string|zsp|-|An "array-like" string that stands for a the scrolling parallax speed of the subsection. }}
+}}
+
+==Oddities and Quirks==
+Below is a list of certain quirks certain BGPs have that does not conform to standard behavior or simply other miscellaneous behavior.
+
+[[Category:TeaScript.vbs]]
